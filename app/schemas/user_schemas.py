@@ -7,5 +7,6 @@ class user_info(BaseModel):
     token: str = None
 
 class login_respon(BaseModel):
-    state: bool = False
+    state: int = 0
     token: str = None
+    message: str = None

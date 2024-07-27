@@ -5,13 +5,17 @@ from sqlalchemy import (
 from app.command.database import Base
 
 
-class user(Base):
+class User(Base):
     __tablename__ = "user"
     id = Column(BigInteger, primary_key=True, autoincrement=True) # 主键，自增
+    user_id = Column(BigInteger, primary_key=True)
     name = Column(String(255), nullable=False)
     password = Column(String(255),nullable= False)
     role = Column(BigInteger,default=1,comment="user authority")
     codeforcesid = Column(String(255),nullable= True)
+    
+    def to_dict(self):
+        return {key: value for key, value in self.__dict__.items() if not key.startswith('_')}
 
 class Status(Base):
     __tablename__ = "status"

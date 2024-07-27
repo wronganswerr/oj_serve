@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from typing import Optional
-from fastapi import HTTPException
+from fastapi import HTTPException,Depends
 from app.command.core.config import config
 from app.schemas.response_schemas import response_model
 
@@ -14,8 +14,12 @@ router = APIRouter()
 @response_model(login_respon)
 async def login(user_info:user_info):
     try:
-        
-        pass
-
+        res = await user_serve.login(user_info)
+        return res
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal Server Error")
+    
+@router.get('/get_user_info',response_model=user_info)
+@response_model(user_info)
+async def get_user_info(user_id:int = Depends(user_serve.get_current_user)):
+    pass
