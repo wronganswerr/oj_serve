@@ -10,6 +10,8 @@ PID_FILE="${PID_DIR}/${APP_NAME}.pid"
 LOG_DIR="${RUNTIME_DIR}/logs"
 LOG_FILE="${LOG_DIR}/error.log"
 
+CONSOLE_LOG_FILE=${LOG_DIR}/${APP_NAME}.console.log
+
 CONFIG_DIR="${RUNTIME_DIR}/configs"
 
 
@@ -44,7 +46,7 @@ start() {
     mkdir -p "${LOG_DIR}"
     mkdir -p "${PID_DIR}"
 
-    nohup python -m app.main >> ${LOG_FILE}  2>&1 &
+    nohup python -m app.main >> ${CONSOLE_LOG_FILE}  2>&1 &
 
     local pid=$!
     # TODO: Check if the server is started successfully...

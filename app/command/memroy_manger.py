@@ -18,13 +18,15 @@ class MemroyManger():
                 new_value.user_id = user_id
                 self.user_info_memory[token] = new_value
                 return True
-            except:
+            except Exception as e:
+                logger.error(f'Unexpected error: {e}')
                 return False
     
-    async def get_user_info_memory(self, token):
+    async def get_user_info_memory(self, token:str):
         try:
             return self.user_info_memory[token] # user_info
         except Exception as e:
             logger.info(f"Unexpect error: {e}")
+            return None
 
 memroy_manger = MemroyManger()
