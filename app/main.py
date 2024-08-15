@@ -1,8 +1,8 @@
 import uvicorn
 from fastapi import FastAPI
 from .routers import api_router
-from app.command.database import database
-from app.command.core.config import config
+from app.common.database import database
+from app.common.core.config import config
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 

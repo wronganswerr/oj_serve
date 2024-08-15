@@ -1,6 +1,6 @@
 import logging
 from logging.handlers import TimedRotatingFileHandler
-from app.command.core.config import config
+from app.common.core.config import config
 # import requests
 import json
 import time

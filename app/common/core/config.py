@@ -19,6 +19,15 @@ class ApiConfig(BaseSettings):
     SERVER_PORT: int
 
     BASE_INFO_PATH: str
+
+
+    MONGODB_HOST: int
+    MONGODB_PORT: int
+    MONGODB_DATABASE: str
+    MONGODB_USERNAME: str
+    MONGODB_PASSWORD: str
+    MONGODB_MAX_POOL_SIZE: int
+    
     class Config:
         env_file = "runtime/configs/api.env" 
 

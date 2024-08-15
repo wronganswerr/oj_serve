@@ -1,31 +1,24 @@
-from app.command.database import database
+from app.common.database import database
 from app.schemas.user_schemas import user_info,login_respon
 from app.database_rep import user_rep
-from app.command.enums.user_enum import UserLoginState
-from app.command.models.users import User
-from app.command.memroy_manger import memroy_manger
+from app.common.enums.user_enum import UserLoginState
+from app.common.models.users import User
+from app.common.memroy_manger import memroy_manger
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import HTTPException, Depends
-from app.command.exceptions import MCException
+from app.common.exceptions import MCException
 
-from app.command.enums.user_enum import UserErrorCode
+from app.common.enums.user_enum import UserErrorCode
 import random
 import uuid
 import secrets
-from app.command.core.logger import get_logger
+from app.common.core.logger import get_logger
 
 logger = get_logger(__name__)
 bearer_scheme = HTTPBearer()
 
 
-async def get_user_id_by_token(token: str):
-    user_info = await memroy_manger.get_user_info_memory(token)
-    if not user_info:
-        return None
 
-    user_id = user_info.user_id
-    return user_id
-    
 
 async def creat_user_id():
     # 约定 user_id 为 在十进制下长度为16的 数字 1000000000000000
@@ -122,3 +115,47 @@ async def get_current_user(token: HTTPAuthorizationCredentials = Depends(bearer_
     except Exception as e:
         logger.error(f"Error checking current user token: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+async def get_user_info_by_token(token: str):
+    try:
+        user_info = await memroy_manger.get_user_info_memory(token)
+        if not user_info:
+            raise MCException(
+                status_code= UserErrorCode.AUTH_CREDENTIAL_INVALID,
+                detail="Invalid authentication credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error checking current user token: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+async def get_user_id_by_token(token: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+    user_info = await get_user_info_by_token(token.credentials)
+    user_id = user_info.user_id
+    return user_id
+    
+async def get_user_role_by_token(token: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+    user_info = await get_user_info_by_token(token.credentials)
+
+    user_role = user_info.role
+
+    return user_role
+
+
+    
+async def update_user_info(user_info: user_info):
+    try:
+        user_info_dict = user_info.model_dump()
+        need_update_value = {}
+        for key,value in user_info_dict.items():
+            if value!= None:
+                need_update_value[key]=value
+
+        if await user_rep.update_user_info(need_update_value):
+            return 'ok'
+        
+    except Exception as e:
+        raise e
+    
