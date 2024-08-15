@@ -4,7 +4,7 @@ from starlette.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from functools import wraps
 import json
-from app.command.core.logger import get_logger
+from app.common.core.logger import get_logger
 
 logger = get_logger(__name__)
 

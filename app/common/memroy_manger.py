@@ -1,9 +1,9 @@
 import asyncio
 from app.schemas.user_schemas import user_info
-from app.command.core.logger import get_logger
+from app.common.core.logger import get_logger
 
 logger = get_logger(__name__)
-# 此类管理了所有内存，隔一段时间
+# 此类管理所有内存，实现简易的redis
 class MemroyManger():
     def __init__(self) -> None:
         self.user_info_memory = dict() # token - user_id

@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from typing import Optional
 from fastapi import HTTPException,Depends
-from app.command.core.config import config
+from app.common.core.config import config
 from app.schemas.response_schemas import response_model
 
 from app.schemas.user_schemas import user_info,login_respon
@@ -37,3 +37,12 @@ async def get_user_info(user_id:int = Depends(user_serve.get_current_user)):
 @response_model
 async def get_user_id_by_token(user_id:int = Depends(user_serve.get_current_user)):
     return user_id
+
+@router.post('/update_user_info')
+@response_model
+async def update_user_info(user_info: user_info, user_id:int = Depends(user_serve.get_current_user)):
+    try:
+        res = await user_serve.update_user_info(user_id,user_info)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Internal Server Error")

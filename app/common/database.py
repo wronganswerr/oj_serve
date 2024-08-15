@@ -1,6 +1,6 @@
 from sqlalchemy.ext.declarative import declarative_base
 from databases import Database
-from app.command.core.config import config
+from app.common.core.config import config
 
 SQLALCHEMY_DATABASE_URL = config.MYSQL_URL
 

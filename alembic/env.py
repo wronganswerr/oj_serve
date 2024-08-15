@@ -17,14 +17,14 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 
-from app.command.database import Base
+from app.common.database import Base
 
-from app.command.models import *
+from app.common.models import *
 
 target_metadata = Base.metadata
 
 # Read the database URL from the app's config file
-from app.command.core.config import config as app_config
+from app.common.core.config import config as app_config
 mysql_sync_url = app_config.MYSQL_URL.replace("mysql+aiomysql://", "mysql+pymysql://")
 config.set_main_option("sqlalchemy.url", mysql_sync_url)
 

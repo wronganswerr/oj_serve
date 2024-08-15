@@ -2,7 +2,7 @@ from sqlalchemy import (
     Column, String, Boolean, Integer, BigInteger,
     JSON, Index, DateTime, func, Enum, text
 )
-from app.command.database import Base
+from app.common.database import Base
 
 
 class User(Base):
@@ -12,7 +12,18 @@ class User(Base):
     name = Column(String(255), nullable=False)
     password = Column(String(255),nullable= False)
     role = Column(BigInteger,default=1,comment="user authority")
-    codeforcesid = Column(String(255),nullable= True)
+    
+    codeforcesname = Column(String(255),nullable= True)
+    codeforcesrating = Column(BigInteger,default=0)
+    codeforcessloved = Column(BigInteger,default=0)
+    
+    nowcodername = Column(String(255))
+    nowcoderrating = Column(BigInteger, default=0)
+    nowcodersloved = Column(BigInteger,default=0)
+    
+    atcodername = Column(String(255))
+    atcoderrating = Column(BigInteger, default=0)
+    atcodersloved = Column(BigInteger,default=0)
     
     def to_dict(self):
         return {key: value for key, value in self.__dict__.items() if not key.startswith('_')}
