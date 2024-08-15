@@ -21,7 +21,7 @@ class ApiConfig(BaseSettings):
     BASE_INFO_PATH: str
 
 
-    MONGODB_HOST: int
+    MONGODB_HOST: str
     MONGODB_PORT: int
     MONGODB_DATABASE: str
     MONGODB_USERNAME: str

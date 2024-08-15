@@ -6,3 +6,6 @@ pydantic
 databases[aiomysql]
 motor
 python-dotenv
+pydantic_settings
+cryptography
+alembic

@@ -3,10 +3,10 @@ from typing import Optional
 from fastapi import HTTPException,Depends
 from app.common.core.config import config
 from app.schemas.response_schemas import response_model
-
-from app.schemas.user_schemas import user_info,login_respon
-
-from app.serve import user_serve
+from app.schemas.user_schemas import login_respon
+from app.serve import user_serve, problem_serve
+from app.common.core.logger import get_logger
+logger = get_logger(__name__)
 
 router = APIRouter()
 
@@ -22,5 +22,10 @@ router = APIRouter()
 @router.get("/get_all_problem_id")
 @response_model()
 async def get_all_problem_id(user_role= Depends(user_serve.get_user_role_by_token)):
-    # await 
-    pass
+    try:
+        logger.info(f'{user_role}')
+        res = await problem_serve.get_all_problem(user_role)
+        return res
+    except Exception as e:
+        logger.error(e)
+        raise e

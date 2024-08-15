@@ -1,9 +1,11 @@
 from pydantic import BaseModel
 
-class user_info(BaseModel):
+class UserInfo(BaseModel):
     user_id: int = None
     user_name: str = None
     pass_word: str = None
+    role: int = None
+
     codeforcesname: str = None
     codeforcesrating: int = None
     codeforcessloved: int= None

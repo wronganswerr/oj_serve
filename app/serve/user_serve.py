@@ -1,5 +1,5 @@
 from app.common.database import database
-from app.schemas.user_schemas import user_info,login_respon
+from app.schemas.user_schemas import UserInfo,login_respon
 from app.database_rep import user_rep
 from app.common.enums.user_enum import UserLoginState
 from app.common.models.users import User
@@ -40,7 +40,7 @@ async def creat_token(user_id):
         return None
     return token
 
-async def login(user_info: user_info):
+async def login(user_info: UserInfo):
     db_user_info = await user_rep.get_user_info(user_info.user_id)
     logger.info(f"get user_db {db_user_info.user_id} {db_user_info.name} {db_user_info.role}")
     if db_user_info == None:
@@ -65,7 +65,7 @@ async def login(user_info: user_info):
         message= UserLoginState.ACCEPT.name
     )
 
-async def add_new_user(user_info: user_info):
+async def add_new_user(user_info: UserInfo):
     new_user =  User(
         user_id= user_info.user_id,
         name = user_info.user_name,
@@ -75,7 +75,7 @@ async def add_new_user(user_info: user_info):
     if not await user_rep.add_new_user(new_user):
         raise RuntimeError('run time error')
 
-async def register(user_info:user_info):
+async def register(user_info:UserInfo):
     try:
         logger.info(f'user_info: {user_info} need register')
         
@@ -99,32 +99,35 @@ async def register(user_info:user_info):
         logger.error(f'Unexpeced error in register: {e}')
         raise e
 
-async def get_current_user(token: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
-    try:
-        user_id = await user_rep.get_user_id_by_token(token.credentials)
-        logger.info(f"get_current_user user token {token.credentials} user_id {user_id}")
-        if not user_id:
-            raise MCException(
-                status_code= UserErrorCode.AUTH_CREDENTIAL_INVALID,
-                detail="Invalid authentication credentials",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-        return user_id
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error checking current user token: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+# async def get_current_user(token: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+#     try:
+#         user_id = await user_rep.get_user_id_by_token(token.credentials)
+#         logger.info(f"get_current_user user token {token.credentials} user_id {user_id}")
+#         if not user_id:
+#             raise MCException(
+#                 status_code= UserErrorCode.AUTH_CREDENTIAL_INVALID,
+#                 detail="Invalid authentication credentials",
+#                 headers={"WWW-Authenticate": "Bearer"},
+#             )
+#         return user_id
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         logger.error(f"Error checking current user token: {e}")
+#         raise HTTPException(status_code=500, detail="Internal server error")
 
 async def get_user_info_by_token(token: str):
     try:
         user_info = await memroy_manger.get_user_info_memory(token)
+        logger.info(f'get user_info {user_info}')
         if not user_info:
             raise MCException(
                 status_code= UserErrorCode.AUTH_CREDENTIAL_INVALID,
                 detail="Invalid authentication credentials",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+        
+        return user_info
     except HTTPException:
         raise
     except Exception as e:
@@ -137,7 +140,7 @@ async def get_user_id_by_token(token: HTTPAuthorizationCredentials = Depends(bea
     return user_id
     
 async def get_user_role_by_token(token: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
-    user_info = await get_user_info_by_token(token.credentials)
+    user_info:UserInfo = await get_user_info_by_token(token.credentials)
 
     user_role = user_info.role
 
@@ -145,7 +148,7 @@ async def get_user_role_by_token(token: HTTPAuthorizationCredentials = Depends(b
 
 
     
-async def update_user_info(user_info: user_info):
+async def update_user_info(user_info: UserInfo):
     try:
         user_info_dict = user_info.model_dump()
         need_update_value = {}

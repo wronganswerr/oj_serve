@@ -6,6 +6,10 @@ class UserLoginState(Enum):
     PASSWORD_ERROR = 2
     REGISTER_PASSWORD_UNLEGAL = 3
 
+class UserRole(Enum):
+    SUPER_MAN = 0
+    COMMON_USER = 1
+
 class UserErrorCode(Enum):
     # 身份验证凭据无效
     AUTH_CREDENTIAL_INVALID = (41001, "登录失败")

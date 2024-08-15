@@ -2,6 +2,8 @@ import uvicorn
 from fastapi import FastAPI
 from .routers import api_router
 from app.common.database import database
+from app.common.mongodb import get_mongodb_connection
+
 from app.common.core.config import config
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 async def lifespan(app: FastAPI):
     # 在应用启动时运行
     await database.connect()
+    await get_mongodb_connection()
     yield
     # 在应用关闭时运行
     await database.disconnect()
