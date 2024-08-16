@@ -74,7 +74,7 @@ function Stop-App {
 
 function Test-Config {
     try {
-        python -c "from app.command.core.config import ApiConfig"
+        python -c "from app.common.core.config import ApiConfig"
         Write-Host "Config check ok"
     } catch {
         Write-Host "Config check failed"

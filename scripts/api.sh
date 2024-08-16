@@ -87,7 +87,7 @@ stop() {
 
 
 check_config() {
-    python -c "from app.command.core.config import ApiConfig"
+    python -c "from app.common.core.config import ApiConfig"
     local exit_status=$?
     if [ $exit_status -ne 0 ]; then
         echo "Config check failed"

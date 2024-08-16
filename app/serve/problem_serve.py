@@ -1,5 +1,5 @@
 from app.common.database import database
-from app.schemas.user_schemas import login_respon
+from app.schemas.problem_schemas import ProblemResponse
 from app.database_rep import user_rep
 from app.common.enums.user_enum import UserLoginState
 from app.common.models.users import User
@@ -8,14 +8,14 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import HTTPException, Depends
 from app.common.exceptions import MCException
 
-from app.common.enums.user_enum import UserErrorCode
+from app.common.enums.mongo_enum import MongoTable
 import random
 import uuid
 import secrets
 
 from app.common.core.logger import get_logger
 from app.common.enums.user_enum import UserRole
-from app.common.mongodb import get_mongodb_connection
+from app.common.mongodb import mongodb_manger
 from app.common.mongodb_unity import convert_int64
 
 
@@ -29,19 +29,22 @@ async def get_all_problem(user_role:int):
     except Exception as e:
         raise e
 
-    query = {}
+    select_query = {}
     if user_role_name == UserRole.COMMON_USER:
-        query['is_hide'] = False
+        select_query['is_hide'] = False
     
-    mongo_db = await get_mongodb_connection()
-    logger.info(mongo_db)
-    problem = mongo_db['problem']
-    curson = problem.find()
-    result = []
-    async for doc in curson:
-        doc = convert_int64(doc)
-        episode_item = doc
-        result.append(episode_item)
+    filter_query = {'hash_id':1, }
 
-    logger.info(result)
-    return "ok"
+    result = await mongodb_manger.select_doc(MongoTable.PROBLEM.value, select_query, filter_query)
+
+    logger.info(f'get problem id list: {result}')
+    response = ProblemResponse(
+        size= len(result),
+        content=result
+    )
+    return response
+
+async def get_problem_specific_info(problem_id):
+    
+    pass
+    
