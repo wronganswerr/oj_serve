@@ -1,5 +1,5 @@
 from enum import Enum
 
 class ExecuteState(Enum):
-    OK = 'OK'
-    FAILED = 'FAILED'
+    OK = 0
+    FAILED = 1

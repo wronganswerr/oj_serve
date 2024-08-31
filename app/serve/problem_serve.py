@@ -106,7 +106,7 @@ async def insert_problem(new_problem:ProblemMG):
     try:
         logger.info(f'PROBLEM PATH IS {config.PROBLEM_DATA_PATH}')
         new_problem.hash_id = get_hash_id(new_problem.problemtitle)
-        
+        logger.info(f'created hash_id {new_problem.hash_id}')
         tasks_list = []
         
         for index,_ in enumerate(new_problem.data):
@@ -134,7 +134,7 @@ async def insert_problem(new_problem:ProblemMG):
         if res == None:
             message = f'fail insert problem in mongodb'
             res = ExecuteResponse(
-                state= ExecuteState.FAIL.value,
+                state= ExecuteState.FAILED.value,
                 message= message
             )
         else:
@@ -167,11 +167,26 @@ async def get_user_problem_status(user_id:int):
         content=[x.problem_id for x in data]
     )
 
-async def add_problem(new_problem: AddRequest, role):
+async def add_problem(new_problem_data: AddRequest, role):
     user_role =  UserRole(role)
     if user_role != UserRole.SUPERMAN:
-        return AddResponse(
-            code= 0,
-            problem_id= ""
+        return ExecuteResponse(
+            state=ExecuteState.FAILED.value,
+            message="no permission"
         )
-    pass
+    
+    new_problem = ProblemMG(
+        problemtitle= new_problem_data.problem_title,
+        timelimit= new_problem_data.time_limit,
+        memorylimit= new_problem_data.memory_limit,
+        problemmain= new_problem_data.problem_main,
+        inputdescribe= new_problem_data.input_describe,
+        outputdescribe= new_problem_data.output_describe,
+        is_hide= new_problem_data.is_hide,
+        example= new_problem_data.example,
+        data= new_problem_data.data,
+        hash_id=""
+    )
+
+    return await insert_problem(new_problem)
+    

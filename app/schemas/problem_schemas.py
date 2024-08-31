@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import List, Dict
 
 class ExecuteResponse(BaseModel):
     state: str
@@ -22,7 +23,7 @@ class AddRequest(BaseModel):
     problem_main: str # problemmain.value,
     input_describe: str # inputdescribe.value,
     output_describe: str # outputdescribe.value,
-    example: str # exampletmp,
+    example: List[Dict] # exampletmp,
     is_hide: bool # is_hide.value,
-    data: list[dict] #JSON.parse(JSON.stringify(data.value)),
+    data: List[Dict] #JSON.parse(JSON.stringify(data.value)),
     
