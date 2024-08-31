@@ -8,13 +8,13 @@ PID_DIR="${RUNTIME_DIR}/pids"
 PID_FILE="${PID_DIR}/${APP_NAME}.pid"
 
 LOG_DIR="${RUNTIME_DIR}/logs"
-LOG_FILE="${LOG_DIR}/error.log"
+LOG_FILE="${LOG_DIR}/${APP_NAME}.error.log"
 
 CONSOLE_LOG_FILE=${LOG_DIR}/${APP_NAME}.console.log
 
 CONFIG_DIR="${RUNTIME_DIR}/configs"
 
-
+DEFAULT_TAIL_LINES=20
 
 build_env() {
     echo "Building environment for ${APP_NAME}..."
@@ -97,6 +97,14 @@ check_config() {
     fi
 }
 
+taillog() {
+    local num_lines=${1:-$DEFAULT_TAIL_LINES}
+    if [ -f "${LOG_FILE}" ]; then
+        tail -n "${num_lines}" -f "${LOG_FILE}"
+    else
+        echo "No log file found for ${APP_NAME} ${LOG_FILE}"
+    fi
+}
 
 case "$1" in
     build_env)
@@ -115,6 +123,10 @@ case "$1" in
         sleep 3
         start
         sleep 10
+        ;;
+    taillog)
+        shift
+        taillog "$@"
         ;;
     *)
         echo "Usage: $0 {start|stop|restart}"

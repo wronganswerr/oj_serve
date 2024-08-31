@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Set, ClassVar
 
 class BaseObject(BaseModel):
     # mongo基类
+    _id: str = None
     pass
 
 class Example(BaseObject):
@@ -11,8 +12,7 @@ class Example(BaseObject):
 
 class Date(BaseObject):
     input_path: str
-    outputpath: str
-    # 此处格式不统一，暂时兼容老mongo
+    out_putpath: str
 
 class ProblemMG(BaseObject):
     memorylimit: int
@@ -21,7 +21,8 @@ class ProblemMG(BaseObject):
     problemmain: str
     inputdescribe: str
     outputdescribe: str
-    is_hide: bool
-    example: List[Example]
-    data: List[Date]
+    is_hide: bool = False
+    example: List[Example] = []
+    data: List[Date] = []
+    hash_id: str = ''
     

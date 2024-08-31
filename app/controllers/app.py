@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from typing import Optional
-
+from app.schemas.response_schemas import response_model
 import datetime
 
 router = APIRouter()
@@ -10,6 +10,7 @@ async def read_root():
     return {"message": "Welcome to FastAPI"}
 
 @router.get("/xx")
+@response_model()
 async def xx():
     love = str
     days = int

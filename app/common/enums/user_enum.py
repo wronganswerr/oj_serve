@@ -5,10 +5,12 @@ class UserLoginState(Enum):
     NOT_FIND_OBJECTIVE_USER = 1
     PASSWORD_ERROR = 2
     REGISTER_PASSWORD_UNLEGAL = 3
+    USER_EXITED = 4
 
 class UserRole(Enum):
-    SUPER_MAN = 0
-    COMMON_USER = 1
+    SUPERMAN = 1
+    COMMONUSER = 2
+    VISITOT = 0
 
 class UserErrorCode(Enum):
     # 身份验证凭据无效

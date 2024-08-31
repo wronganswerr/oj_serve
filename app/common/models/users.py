@@ -24,6 +24,8 @@ class User(Base):
     atcodername = Column(String(255))
     atcoderrating = Column(BigInteger, default=0)
     atcodersloved = Column(BigInteger,default=0)
+
+    phone_number = Column(String(255),default='')
     
     def to_dict(self):
         return {key: value for key, value in self.__dict__.items() if not key.startswith('_')}
@@ -49,3 +51,6 @@ class Status(Base):
         Index('idx_status_user_id', 'user_id'),
         Index('idx_status_problem_id', 'problem_id'),
     )
+    
+    def to_dict(self):
+        return {key: value for key, value in self.__dict__.items() if not key.startswith('_')}

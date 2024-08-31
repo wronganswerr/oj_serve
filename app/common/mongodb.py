@@ -28,12 +28,12 @@ class MongodbManger:
         except Exception as e:
             logger.error(f'Unexpceted error: {e}')
 
-    async def select_doc(self, table_name, select_query:dict, filter_query:dict):
+    async def select_doc(self, table_name, select_query:dict={}, filter_query:dict={}):
         # 暂时不支持排序
         try:
             table_object = self.mongodb_pool[table_name]
 
-            curson = table_object.find(select_query,filter_query)
+            curson = table_object.find(select_query,projection=filter_query)
 
             res = []
             async for doc in curson:
@@ -48,8 +48,29 @@ class MongodbManger:
             return res
         except Exception as e:
             logger.error(f'Unexpected error: {e}')
+            return None
 
+    async def del_doc(self, table_name, query):
+        try:
+            table_object = self.mongodb_pool[table_name]
+            res = await table_object.delete_many(query)
+            logger.info(f'delete_query: {query} response: {res}')
+            return res
+        except Exception as e:
+            logger.error(f'Unexpected error: {e}')
     # async def get_all_problem(user_role:int):
+
+    async def insert_doc(self, table_name, insert_list: list):
+        try:
+            table_object = self.mongodb_pool[table_name]
+            res = await table_object.insert_many(insert_list)
+            logger.info(f'insert_date: {insert_list} response: {res}')           
+            return res
+        except Exception as e:
+            logger.error(f'Unexpected error: {e}')
+            return None
+        # print(f'插入的文档 ID: {result.inserted_ids}')
+
 
 
 mongodb_manger = MongodbManger()

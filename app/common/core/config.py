@@ -28,6 +28,11 @@ class ApiConfig(BaseSettings):
     MONGODB_PASSWORD: str
     MONGODB_MAX_POOL_SIZE: int
     
+    PROBLEM_DATA_PATH: str
+
+    MAX_KEEPALIVE_CONNECTIONS: int
+    MAX_CONNECTIONS: int
+
     class Config:
         env_file = "runtime/configs/api.env" 
 
