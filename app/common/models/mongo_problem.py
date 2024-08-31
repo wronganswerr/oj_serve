@@ -6,13 +6,13 @@ class BaseObject(BaseModel):
     _id: str = None
     pass
 
-class Example(BaseObject):
+class Example(BaseModel):
     input: str
     output: str
 
-class Date(BaseObject):
-    input_path: str
-    out_putpath: str
+# class Date(BaseObject):
+#     input_path: str
+#     out_putpath: str
 
 class ProblemMG(BaseObject):
     memorylimit: int
@@ -23,6 +23,6 @@ class ProblemMG(BaseObject):
     outputdescribe: str
     is_hide: bool = False
     example: List[Example] = []
-    data: List[Date] = []
+    data: List[Example] = []
     hash_id: str = ''
     

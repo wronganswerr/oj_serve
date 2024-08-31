@@ -18,6 +18,7 @@ class MongodbManger:
         self.mongodb_pool = motor.motor_asyncio.AsyncIOMotorClient(
             mongo_uri, username=config.MONGODB_USERNAME, password=config.MONGODB_PASSWORD, 
             maxPoolSize=config.MONGODB_MAX_POOL_SIZE, connectTimeoutMS=2000, serverSelectionTimeoutMS=3000)
+        self.db = self.mongodb_pool[config.MONGODB_DATABASE]
 
     async def get_mongodb_connection(self):
         try:
@@ -31,7 +32,7 @@ class MongodbManger:
     async def select_doc(self, table_name, select_query:dict={}, filter_query:dict={}):
         # 暂时不支持排序
         try:
-            table_object = self.mongodb_pool[table_name]
+            table_object = self.db[table_name]
 
             curson = table_object.find(select_query,projection=filter_query)
 
@@ -52,7 +53,7 @@ class MongodbManger:
 
     async def del_doc(self, table_name, query):
         try:
-            table_object = self.mongodb_pool[table_name]
+            table_object = self.db[table_name]
             res = await table_object.delete_many(query)
             logger.info(f'delete_query: {query} response: {res}')
             return res
@@ -62,12 +63,13 @@ class MongodbManger:
 
     async def insert_doc(self, table_name, insert_list: list):
         try:
-            table_object = self.mongodb_pool[table_name]
+            table_object = self.db[table_name]
+
             res = await table_object.insert_many(insert_list)
             logger.info(f'insert_date: {insert_list} response: {res}')           
             return res
         except Exception as e:
-            logger.error(f'Unexpected error: {e}')
+            logger.error(f'Unexpected error: {e}',exc_info=True)
             return None
         # print(f'插入的文档 ID: {result.inserted_ids}')
 

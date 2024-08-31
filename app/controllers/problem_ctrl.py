@@ -43,11 +43,11 @@ async def get_user_problem_status(user_id= Depends(user_serve.get_user_id_by_tok
     
 @router.post("/add_problem", response_model= ExecuteResponse)
 @response_model(ExecuteResponse)
-async def add_problem(new_prblem: AddRequest, user_role= Depends(user_serve.get_user_info_by_token)):
+async def add_problem(new_prblem: AddRequest, user_role= Depends(user_serve.get_user_role_by_token)):
     try:
         logger.info(f'add new_problem {new_prblem.problem_title}')
         res = await problem_serve.add_problem(new_prblem, user_role)
         return res
     except Exception as e:
-        logger.error(e)
+        logger.error(e,exc_info=True)
         raise HTTPException(500, "Internal Server Error")

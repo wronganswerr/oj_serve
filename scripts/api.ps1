@@ -97,7 +97,7 @@ switch ($action) {
         break
     }
     "restart" {
-        Tset-Config
+        Test-Config
         Stop-App
         Start-Sleep -Seconds 3
         Start-App

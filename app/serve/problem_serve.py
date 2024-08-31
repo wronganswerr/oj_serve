@@ -14,7 +14,7 @@ from app.common.enums.mongo_enum import MongoTable
 from app.common.core.logger import get_logger
 from app.common.enums.user_enum import UserRole
 from app.common.mongodb import mongodb_manger
-from app.common.models.mongo_problem import ProblemMG
+from app.common.models.mongo_problem import ProblemMG, Example
 from app.common.unity.unity import get_hash_id
 from app.database_rep import problem_rep 
 
@@ -84,16 +84,16 @@ async def del_problem(user_id:int, user_role:int, problem_id:str):
 
     return {'state':'ok','message':result}
 
-async def write_problem_data(input_path,output_path,data:dict):
+async def write_problem_data(input_path,output_path,data:Example):
     try:
         with open(input_path,'w') as f:
-            f.write(data['input'].replace('\r', ''))
+            f.write(data.input.replace('\r', ''))
         with open(output_path,'w') as f:
-            f.write(data['output'].replace('\r', ''))
-        return True,{
-            'input_path': input_path,
-            'output_path':output_path
-        }
+            f.write(data.output.replace('\r', ''))
+        return True,Example(
+            input= input_path,
+            output= output_path
+        )
     except Exception as e:
         logger.error(f'Unexepected error: {e}')
         return False, None
@@ -130,18 +130,16 @@ async def insert_problem(new_problem:ProblemMG):
                 fail_list.append(index)
             pass
 
-        res = await mongodb_manger.insert_doc(MongoTable.PROBLEM.value, [ProblemMG.model_dump_json()])
+        res = await mongodb_manger.insert_doc(MongoTable.PROBLEM.value, [new_problem.dict()])
         if res == None:
-            message = f'fail insert problem in mongodb'
             res = ExecuteResponse(
                 state= ExecuteState.FAILED.value,
-                message= message
+                message= ExecuteState.FAILED.name
             )
         else:
-            message = f'success message: {res}'
             res = ExecuteResponse(
                 state= ExecuteState.OK.value,
-                message= message
+                message= ExecuteState.OK.name
             )
         
         return res
@@ -184,7 +182,7 @@ async def add_problem(new_problem_data: AddRequest, role):
         outputdescribe= new_problem_data.output_describe,
         is_hide= new_problem_data.is_hide,
         example= new_problem_data.example,
-        data= new_problem_data.data,
+        data= new_problem_data.example,
         hash_id=""
     )
 
