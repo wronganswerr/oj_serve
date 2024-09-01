@@ -193,7 +193,6 @@ async def get_user_id_by_token(token: HTTPAuthorizationCredentials = Depends(bea
     return user_id
     
 async def get_user_role_by_token(token: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
-    return 1
     user_info:UserInfo = await get_user_info_by_token(token.credentials)
 
     user_role = user_info.role
