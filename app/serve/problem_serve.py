@@ -1,6 +1,7 @@
 import os
 import asyncio
 
+from bson import ObjectId
 from app.common.core.config import config
 from app.schemas.problem_schemas import ProblemResponse, ExecuteResponse
 from app.common.enums.common_enum import ExecuteState
@@ -42,7 +43,7 @@ async def get_all_problem(user_role:int):
     if user_role_name != UserRole.SUPERMAN:
         select_query['is_hide'] = False
     
-    filter_query = {'hash_id':1, }
+    filter_query = {'hash_id':1, 'problemtitle':1}
 
     result = await mongodb_manger.select_doc(MongoTable.PROBLEM.value, select_query, filter_query)
     
@@ -187,4 +188,21 @@ async def add_problem(new_problem_data: AddRequest, role):
     )
 
     return await insert_problem(new_problem)
+
+async def get_problem_detile(problem_id:str):
+
+    filter_query = {'memorylimit': 1, 'timelimit': 1, 'problemtitle': 1,
+                    'problemmain': 1, 'inputdescribe':1, 'outputdescribe': 1,
+                    'example':1}
+    select_query = {'_id': ObjectId(problem_id)}
+
+    result = await mongodb_manger.select_doc(MongoTable.PROBLEM.value, select_query, filter_query)
+    if len(result) <= 0:
+        logger.error(f'id {problem_id} not exit')
+        raise ValueError('id not exit')
     
+    problem = result[0]
+    
+    # logger.info(f'get problem id list: {result}')
+
+    return ProblemMG(**problem)

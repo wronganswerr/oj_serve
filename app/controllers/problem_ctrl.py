@@ -23,13 +23,19 @@ async def get_all_problem_id(user_role= Depends(user_serve.get_user_role_by_toke
         logger.error(e,exc_info= True)
         raise HTTPException(500,"Internal Server Error")
     
-@router.get("/get_one_problem_detil", response_model= ProblemMG)
+@router.post("/get_problem_detile", response_model= ProblemMG)
 @response_model(ProblemMG)
-async def get_one_problem_detil(problem_id: str):
+async def get_problem_detile(problem_req: RequestProblem):
     """
     部分参数隐藏
     """
-    return 'ok'
+    try:
+        res = await problem_serve.get_problem_detile(problem_req.problem_id)
+        return res
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(500, "Internal Server Error")
+    # return 'ok'
 
 @router.get("/get_user_problem_status", response_model= ProblemResponse)
 @response_model(ProblemResponse)

@@ -10,7 +10,7 @@ class ProblemResponse(BaseModel):
     content: list = []
 
 class RequestProblem(BaseModel):
-    problem_id: int = None
+    problem_id: str
 
 class AddResponse(BaseModel):
     code: int = 0
@@ -30,4 +30,4 @@ class AddRequest(BaseModel):
     example: List[Dict] # exampletmp,
     is_hide: bool # is_hide.value,
     data: List[Dict] #JSON.parse(JSON.stringify(data.value)),
-    
+
