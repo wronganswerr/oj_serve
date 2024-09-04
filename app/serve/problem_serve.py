@@ -10,7 +10,7 @@ from app.common.models.users import User
 from app.common.memroy_manger import memroy_manger
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import HTTPException, Depends
-from app.common.exceptions import MCException
+from app.exceptions import MCException
 from app.common.enums.mongo_enum import MongoTable
 from app.common.core.logger import get_logger
 from app.common.enums.user_enum import UserRole

@@ -7,7 +7,7 @@ from app.common.mongodb import mongodb_manger
 from app.common.core.config import config
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-
+from app.exceptions import setup_exception_handlers
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 在应用启动时运行
@@ -38,6 +38,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 增加自定义错误处理
+setup_exception_handlers(app)
 
 app.include_router(api_router)
 # 启动命令：uvicorn main:app --reload --port 8125

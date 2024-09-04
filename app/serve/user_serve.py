@@ -6,7 +6,7 @@ from app.common.models.users import User
 from app.common.memroy_manger import memroy_manger
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import HTTPException, Depends
-from app.common.exceptions import MCException
+from app.exceptions import MCException
 from app.schemas.common_schemas import ListResponse
 from app.common.enums.user_enum import UserErrorCode
 import random
@@ -182,9 +182,11 @@ async def get_user_info_by_token(token: str):
                 headers={"WWW-Authenticate": "Bearer"},
             )
         return user_info
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error checking current user token: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise e
 
 async def get_user_id_by_token(token: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
     logger.info(f'get token {token.credentials}')

@@ -7,7 +7,7 @@ from app.schemas.response_schemas import response_model
 from app.schemas.user_schemas import UserInfo,LoginRespon,UserStatusRequery
 from app.schemas.common_schemas import ListResponse
 
-from app.common.exceptions import MCException
+from app.exceptions import MCException
 from app.serve import user_serve
 from app.common.core.logger import get_logger
 
