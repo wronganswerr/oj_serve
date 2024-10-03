@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import HTTPException,Depends
 from app.common.core.config import config
 from app.schemas.response_schemas import response_model
-from app.schemas.problem_schemas import ProblemResponse, RequestProblem, AddRequest, AddResponse, ExecuteResponse
+from app.schemas.problem_schemas import ProblemResponse, RequestProblem, AddRequest, AddResponse, ExecuteResponse, SubmitProblem
 from app.serve import user_serve, problem_serve
 
 from app.common.models.mongo_problem import ProblemMG
@@ -56,4 +56,25 @@ async def add_problem(new_prblem: AddRequest, user_role= Depends(user_serve.get_
         return res
     except Exception as e:
         logger.error(e,exc_info=True)
+        raise HTTPException(500, "Internal Server Error")
+    
+@router.post("/del_problem", response_model= ExecuteResponse)
+@response_model(ExecuteResponse)
+async def del_problem(del_problem_id: RequestProblem, user_role= Depends(user_serve.get_user_role_by_token),
+                      user_id= Depends(user_serve.get_user_id_by_token)):
+    try:
+        return await problem_serve.del_problem(user_id, user_role, del_problem_id.problem_id)
+    except Exception as e:
+        logger.error(e, exc_info=True)
+        raise HTTPException(500, "Internal Server Error")
+    
+
+@router.post("/submit_problem", response_model= ExecuteResponse)
+@response_model(ExecuteResponse)
+async def submit_prblem(request: SubmitProblem, user_id= Depends(user_serve.get_user_id_by_token)):
+    try:
+        return await problem_serve.submit_problem(request.problem_id, user_id,
+                                                  request.code, request.language)
+    except Exception as e:
+        logger.error(e, exc_info=True)
         raise HTTPException(500, "Internal Server Error")

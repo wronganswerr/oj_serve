@@ -31,3 +31,18 @@ class AddRequest(BaseModel):
     is_hide: bool # is_hide.value,
     data: List[Dict] #JSON.parse(JSON.stringify(data.value)),
 
+
+class SubmitProblem(BaseModel):
+    problem_id: str
+    code: str
+    language: str
+    online_oj_choose:str = 'waoj'
+
+class JudgeMessage(BaseModel):
+    user_id: int
+    problem_id: str
+    code: str
+    created_at: str
+    search_id: str
+    online_oj_choose: str
+    language: str

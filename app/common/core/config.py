@@ -33,6 +33,9 @@ class ApiConfig(BaseSettings):
     MAX_KEEPALIVE_CONNECTIONS: int
     MAX_CONNECTIONS: int
 
+    RABBITMQ_URL: str
+    RABBITMQ_JUDGER_QUEUE_NAME: str
+
     class Config:
         env_file = "runtime/configs/api.env" 
 

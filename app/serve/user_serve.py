@@ -219,13 +219,15 @@ async def update_user_info(user_info: UserInfo):
     
 async def get_user_status(_self, user_id, role, page_size, now_page):
     try:
-        object_status = await user_rep.get_user_status(_self, user_id, now_page * page_size, (now_page + 1) * page_size)
+        object_status = await user_rep.get_user_status(_self, user_id, 
+                                                       (now_page - 1) * page_size + 1, 
+                                                       now_page * page_size)
 
         if object_status == None:
             object_status = [] 
         status_list = []
-        for statu in object_status:
-            status_list.append(statu.to_dict())
+        for status in object_status:
+            status_list.append(dict(status))
         return ListResponse(
             size= len(status_list),
             content= status_list

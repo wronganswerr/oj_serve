@@ -63,19 +63,20 @@ async def get_user_by_phone_number(phone_number:str):
         logger.error(f'Unexpected error: {e}')
         raise e
     
-async def get_user_status(_self, user_id, limit_l, limit_r):
+async def get_user_status(_self, user_id, limit_l, limit_r) -> list[Status]:
     try:
+        logger.info(f'{limit_l} {limit_r}')
         if _self:
             query = select(Status).where(
                 Status.user_id == user_id,
-            ).order_by(Status.when.desc()).limit(limit_r-limit_l).offset(limit_l)
+            ).order_by(Status.when.desc()).limit(limit_r-limit_l+1).offset(limit_l-1)
         else:
-            query = select(Status).order_by(Status.when.desc()).limit(limit_r-limit_l).offset(limit_l)
+            query = select(Status).order_by(Status.when.desc()).limit(limit_r-limit_l+1).offset(limit_l-1)
         
         data = await database.fetch_all(query)
-        
+        logger.debug(f'sql: {query}, res: {data}')
         return data
 
     except Exception as e:
-        logger.error(f'Unexpected error: {e}')
+        logger.error(f'Unexpected error: {e}', exc_info=True)
         raise e

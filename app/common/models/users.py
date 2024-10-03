@@ -35,7 +35,7 @@ class Status(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)  # 主键，自增
     hash_id = Column(String(50), index=True, nullable=True)  # 假设最大长度为50
     code_url = Column(String(200), index=True)  # 假设最大长度为200
-    user_id = Column(Integer, index=True)
+    user_id = Column(BigInteger, index=True)
     when = Column(DateTime)
     problem_id = Column(String(50), index=True)  # 假设最大长度为50
     problem_title = Column(String(100), nullable=True, index=True)  # 假设最大长度为100

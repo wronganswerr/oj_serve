@@ -8,6 +8,19 @@ from app.common.core.config import config
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from app.exceptions import setup_exception_handlers
+import dramatiq
+from dramatiq.brokers.rabbitmq import RabbitmqBroker
+from app.asyncio_middleware import AsyncIOWithUvLoop
+
+broker = RabbitmqBroker(
+    url=config.RABBITMQ_URL,
+    middleware=[AsyncIOWithUvLoop()],
+    confirm_delivery=True,
+)
+dramatiq.set_broker(broker)
+
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 在应用启动时运行

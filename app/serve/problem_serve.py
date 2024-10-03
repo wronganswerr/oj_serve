@@ -1,11 +1,10 @@
 import os
 import asyncio
+import datetime
 
 from bson import ObjectId
 from app.common.core.config import config
-from app.schemas.problem_schemas import ProblemResponse, ExecuteResponse
-from app.common.enums.common_enum import ExecuteState
-from app.schemas.problem_schemas import ProblemResponse, RequestProblem, AddRequest, AddResponse
+from app.common.enums.common_enum import ExecuteState, JudgeLanguage
 from app.common.models.users import User
 from app.common.memroy_manger import memroy_manger
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -18,6 +17,8 @@ from app.common.mongodb import mongodb_manger
 from app.common.models.mongo_problem import ProblemMG, Example
 from app.common.unity.unity import get_hash_id
 from app.database_rep import problem_rep 
+from app.schemas.problem_schemas import ProblemResponse, RequestProblem, AddRequest, AddResponse, ExecuteResponse, JudgeMessage
+from app.actors.judge_process import process_judge_message
 
 logger = get_logger(__name__)
 
@@ -74,16 +75,20 @@ async def del_problem(user_id:int, user_role:int, problem_id:str):
     except Exception as e:
         raise e
     
-    if user_role_name != UserRole.SUPER_MAN:
+    if user_role_name != UserRole.SUPERMAN:
         logger.warning(f'{user_id} try del problem {problem_id} but not super_man')
         # raise HTTPException(status_code=500, detail="Internal Server Error")
-        return f'{user_id} try del problem {problem_id} but not super_man'
+        return ExecuteResponse(state= ExecuteState.FAILED.value,
+                               message= f'{user_id} try del problem {problem_id} but not super_man')  
     
-    query = {'_id':problem_id}
+    query = {'_id': ObjectId(problem_id)}
 
-    result = await mongodb_manger.del_doc(query)
+    result = await mongodb_manger.del_doc(MongoTable.PROBLEM.value, query)
+    
+    result_message = f"Deleted count: {result.deleted_count}, Acknowledged: {result.acknowledged}"
 
-    return {'state':'ok','message':result}
+    return  ExecuteResponse(state= ExecuteState.OK.value,
+                            message= result_message) 
 
 async def write_problem_data(input_path,output_path,data:Example):
     try:
@@ -109,13 +114,13 @@ async def insert_problem(new_problem:ProblemMG):
         new_problem.hash_id = get_hash_id(new_problem.problemtitle)
         logger.info(f'created hash_id {new_problem.hash_id}')
         tasks_list = []
-        
+        logger.info(f"problem data: {new_problem.data}")
         for index,_ in enumerate(new_problem.data):
             last_input_path = config.PROBLEM_DATA_PATH + '/' +  new_problem.hash_id + '/' + str(index) + '.in'
             last_output_path = config.PROBLEM_DATA_PATH + '/' + new_problem.hash_id + '/' + str(index) + '.out'
             os.makedirs(os.path.dirname(last_input_path), exist_ok=True)
             os.makedirs(os.path.dirname(last_output_path), exist_ok=True)
-            tasks_list.append(asyncio.create_task(write_problem_data(last_input_path,last_input_path,_)))
+            tasks_list.append(asyncio.create_task(write_problem_data(last_input_path,last_output_path,_)))
         
         # 清空数据
         new_problem.data = []
@@ -183,7 +188,7 @@ async def add_problem(new_problem_data: AddRequest, role):
         outputdescribe= new_problem_data.output_describe,
         is_hide= new_problem_data.is_hide,
         example= new_problem_data.example,
-        data= new_problem_data.example,
+        data= new_problem_data.data,
         hash_id=""
     )
 
@@ -206,3 +211,37 @@ async def get_problem_detile(problem_id:str):
     # logger.info(f'get problem id list: {result}')
 
     return ProblemMG(**problem)
+
+
+async def submit_problem(problem_id:int, user_id:int, code:str, language:str):
+    try:
+        try:
+            language = JudgeLanguage(language)
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            return ExecuteResponse(state=0, message="language not been supported")
+        
+        judge_message = JudgeMessage(
+            user_id= user_id,
+            problem_id= problem_id,
+            code=code,
+            created_at= datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            online_oj_choose='waoj',
+            language= language,
+            search_id= '114514'
+        )
+        serialized_value = judge_message.model_dump_json(exclude_none=True, exclude_unset=True, by_alias=True)
+        # python -m app.client.judge_test
+        send_tasks = []
+        send_tasks.append(
+                        asyncio.to_thread(
+                            lambda: process_judge_message.send(serialized_value)
+                        )
+                    )
+        result= await asyncio.gather(*send_tasks)
+        logger.info(f'success send message: {result}')
+        return ExecuteResponse(state=1, message="IN QUEUE")
+    except Exception as e:
+        logger.error(f'Unexpected error: {e}')
+        raise e
+    

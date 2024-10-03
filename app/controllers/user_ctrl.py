@@ -71,10 +71,12 @@ async def check_token(user_info: UserInfo, serve_user_id:int = Depends(user_serv
 @response_model(ListResponse)
 async def get_status(user_status_req: UserStatusRequery, user_id:int = Depends(user_serve.get_user_id_by_token), user_role: int = Depends(user_serve.get_user_role_by_token)):
     try:
-        logger.info(f'{user_status_req} {user_role}')
-        res = await user_serve.get_user_status(user_status_req.user_self, user_id,user_role, user_status_req.page_size, user_status_req.now_page)
+        logger.info(f'{user_status_req},  user_role: {user_role}')
+        res = await user_serve.get_user_status(user_status_req.user_self, user_id,
+                                               user_role, user_status_req.page_size, 
+                                               user_status_req.now_page)
         return res
     except Exception as e:
-        logger.error(e)
+        logger.error(e,exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server Error")
     
