@@ -1,3 +1,4 @@
+import datetime
 from pydantic import BaseModel
 from typing import Any, Dict, List, Set, ClassVar
 
@@ -25,4 +26,5 @@ class ProblemMG(BaseObject):
     example: List[Example] = []
     data: List[Example] = []
     hash_id: str = ''
+    created_at: datetime.datetime = datetime.datetime.now()
     

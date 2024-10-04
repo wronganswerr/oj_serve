@@ -1,6 +1,7 @@
 import os
 import asyncio
 import datetime
+import shutil
 
 from bson import ObjectId
 from app.common.core.config import config
@@ -60,7 +61,7 @@ async def get_problem_specific_info(user_id:int,user_role:int,problem_id:str):
     select_query = {
         '_id': problem_id
     }
-    if user_role_name == UserRole.COMMON_USER:
+    if user_role_name == UserRole.COMMONUSER:
         select_query['is_hide'] = False
     
     result =  await mongodb_manger.select_doc(MongoTable.PROBLEM.value, select_query)
@@ -80,11 +81,21 @@ async def del_problem(user_id:int, user_role:int, problem_id:str):
         # raise HTTPException(status_code=500, detail="Internal Server Error")
         return ExecuteResponse(state= ExecuteState.FAILED.value,
                                message= f'{user_id} try del problem {problem_id} but not super_man')  
-    
-    query = {'_id': ObjectId(problem_id)}
 
+    query = {'_id': ObjectId(problem_id)}
+    filter_query = {"hash_id":1}
+    # 获得用例储存路径 -> 删除
+
+    result = await mongodb_manger.select_doc(MongoTable.PROBLEM.value, query, filter_query)
+    for doc in result:
+        try:
+            shutil.rmtree(f"/root/data/{doc['hash_id']}")
+        except Exception as e:
+            logger.info(f'unexpected error {e}')
+            
     result = await mongodb_manger.del_doc(MongoTable.PROBLEM.value, query)
     
+
     result_message = f"Deleted count: {result.deleted_count}, Acknowledged: {result.acknowledged}"
 
     return  ExecuteResponse(state= ExecuteState.OK.value,
@@ -115,11 +126,16 @@ async def insert_problem(new_problem:ProblemMG):
         logger.info(f'created hash_id {new_problem.hash_id}')
         tasks_list = []
         logger.info(f"problem data: {new_problem.data}")
+
+        problem_data_path = config.PROBLEM_DATA_PATH + '/' +  new_problem.hash_id
+        if not os.path.exists(problem_data_path):
+            os.makedirs(problem_data_path, exist_ok=True)
+
         for index,_ in enumerate(new_problem.data):
             last_input_path = config.PROBLEM_DATA_PATH + '/' +  new_problem.hash_id + '/' + str(index) + '.in'
             last_output_path = config.PROBLEM_DATA_PATH + '/' + new_problem.hash_id + '/' + str(index) + '.out'
-            os.makedirs(os.path.dirname(last_input_path), exist_ok=True)
-            os.makedirs(os.path.dirname(last_output_path), exist_ok=True)
+            # os.makedirs(os.path.dirname(last_input_path), exist_ok=True)
+            # os.makedirs(os.path.dirname(last_output_path), exist_ok=True)
             tasks_list.append(asyncio.create_task(write_problem_data(last_input_path,last_output_path,_)))
         
         # 清空数据
@@ -154,12 +170,107 @@ async def insert_problem(new_problem:ProblemMG):
         logger.error(f'Unexpected error: {e}')
         raise e
 
-async def update_problem(new_problem:ProblemMG):
-    """
-    修改（hold）
-    """
+async def update_problem(new_problem:AddRequest, user_role:int)->ExecuteResponse:
     
-    pass
+    try:
+        user_role_name = UserRole(user_role)
+    except Exception as e:
+        raise e
+    
+    if user_role_name != UserRole.SUPERMAN:
+        logger.warning(f'{user_role} try update problem {new_problem.problem_id}, but not super_man')
+        # raise HTTPException(status_code=500, detail="Internal Server Error")
+        return ExecuteResponse(state= ExecuteState.FAILED.value,
+                               message= f'try update problem {new_problem.problem_id} but not super_man')  
+    
+    select_query = {"_id":ObjectId(new_problem.problem_id)}
+    docs = await mongodb_manger.select_doc(MongoTable.PROBLEM.value, select_query)
+    if docs == None or len(docs) == 0:
+        return ExecuteResponse(
+            state=ExecuteState.FAILED.value,
+            message="can't find any record"
+        )
+    
+    old_problem = ProblemMG(**docs[0])
+
+    fail_list = []
+    
+    if len(new_problem.data) > 0:
+        new_problem:ProblemMG = ProblemMG(
+            problemtitle= new_problem.problem_title,
+            timelimit= new_problem.time_limit,
+            memorylimit= new_problem.memory_limit,
+            problemmain= new_problem.problem_main,
+            inputdescribe= new_problem.input_describe,
+            outputdescribe= new_problem.output_describe,
+            is_hide= new_problem.is_hide,
+            example= new_problem.example,
+
+            data= new_problem.data,
+            hash_id= old_problem.hash_id,
+            
+            created_at= datetime.datetime.now()
+        )
+        
+        for doc in docs:
+            try:
+                shutil.rmtree(f"/root/data/{doc['hash_id']}")
+            except Exception as e:
+                logger.info(f'unexpected error {e}')
+        
+        problem_data_path = config.PROBLEM_DATA_PATH + '/' +  old_problem.hash_id
+        tasks_list = []
+        for index,_ in enumerate(new_problem.data):
+            last_input_path = problem_data_path + '/' + str(index) + '.in'
+            last_output_path = problem_data_path + '/' + str(index) + '.out'
+            # os.makedirs(os.path.dirname(last_input_path), exist_ok=True)
+            # os.makedirs(os.path.dirname(last_output_path), exist_ok=True)
+            tasks_list.append(asyncio.create_task(write_problem_data(last_input_path,last_output_path,_)))
+
+        write_results = await asyncio.gather(*tasks_list)
+        new_problem.data.clear()
+        
+        
+        for index,(result, path_dict) in enumerate(write_results):
+            if result:
+                new_problem.data.append(path_dict)
+            else:
+                fail_list.append(index)
+        
+    else:
+        new_problem = ProblemMG(
+            problemtitle= new_problem.problem_title,
+            timelimit= new_problem.time_limit,
+            memorylimit= new_problem.memory_limit,
+            problemmain= new_problem.problem_main,
+            inputdescribe= new_problem.input_describe,
+            outputdescribe= new_problem.output_describe,
+            is_hide= new_problem.is_hide,
+            example= new_problem.example,
+            data= old_problem.data,
+            hash_id= old_problem.hash_id,
+            created_at= datetime.datetime.now()
+        )
+
+    res = await mongodb_manger.update_doc(MongoTable.PROBLEM.value,select_query, new_problem.model_dump())
+    if res is None:
+        res = ExecuteResponse(
+                state= ExecuteState.FAILED.value,
+                message= ExecuteState.FAILED.name
+            )
+    else:
+        if len(fail_list) == 0:
+            res = ExecuteResponse(
+                state= ExecuteState.OK.value,
+                message= ExecuteState.OK.name
+            )
+        else:
+            res = ExecuteResponse(
+                state= ExecuteState.OK.value,
+                message= f"test {fail_list} wirted failed"
+            )
+
+    return res
 
 async def get_user_problem_status(user_id:int):
     data = await problem_rep.get_user_problem_status(user_id)
@@ -189,7 +300,8 @@ async def add_problem(new_problem_data: AddRequest, role):
         is_hide= new_problem_data.is_hide,
         example= new_problem_data.example,
         data= new_problem_data.data,
-        hash_id=""
+        hash_id= "",
+        created_at= datetime.datetime.now()
     )
 
     return await insert_problem(new_problem)

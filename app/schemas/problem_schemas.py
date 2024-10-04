@@ -21,6 +21,7 @@ class Example(BaseModel):
     output: str
 
 class AddRequest(BaseModel):
+    problem_id: str = '0'
     problem_title: str # problemtitle.value,
     time_limit: int # timelimit.value,
     memory_limit: int # memorylimit.value,  

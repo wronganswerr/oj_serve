@@ -72,7 +72,17 @@ class MongodbManger:
             logger.error(f'Unexpected error: {e}',exc_info=True)
             return None
         # print(f'插入的文档 ID: {result.inserted_ids}')
-
+    
+    async def update_doc(self, table_name:str, select_query:dict, update_query:dict, upsert:bool = False):
+        try:
+            table_object = self.db[table_name]
+            update_query = {"$set": update_query}
+            res = await table_object.update_many(select_query, update_query, upsert=upsert)
+            logger.info(f'update_query: {select_query}, update_fields: {update_query}, response: {res.raw_result}')
+            return res
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            return None
 
 
 mongodb_manger = MongodbManger()
