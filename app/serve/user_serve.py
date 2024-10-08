@@ -117,7 +117,7 @@ async def add_new_user(user_info: UserInfo):
         name = user_info.user_name,
         password = user_info.pass_word,
         phone_number = user_info.phone_number,
-        role = 1,
+        role = 2,
     )
     if not await user_rep.add_new_user(new_user):
         raise RuntimeError('run time error')
@@ -223,15 +223,17 @@ async def get_user_status(_self, user_id, role, page_size, now_page):
         object_status = await user_rep.get_user_status(_self, user_id, 
                                                        (now_page - 1) * page_size + 1, 
                                                        now_page * page_size)
-
+        total_number = await user_rep.get_user_status_total_number(_self, user_id)
         if object_status == None:
             object_status = [] 
         status_list = []
         for status in object_status:
             status_list.append(dict(status))
+        
         return ListResponse(
-            size= len(status_list),
+            size= total_number,
             content= status_list
         )
+    
     except Exception as e:
         raise e
