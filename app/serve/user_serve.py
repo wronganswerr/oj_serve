@@ -137,8 +137,9 @@ async def register(user_info:UserInfo):
                     message= UserLoginState.REGISTER_PASSWORD_UNLEGAL.name
                 )
         # a phone_number for a user 
-        phone_number_user = user_rep.get_user_by_phone_number(user_info.phone_number)
-        if phone_number_user not in None:
+        phone_number_user = await user_rep.get_user_by_phone_number(user_info.phone_number)
+        logger.info(f'find in db {phone_number_user}')
+        if phone_number_user is not None:
             return LoginRespon(
                 state= UserLoginState.USER_EXITED.value,
                 message= UserLoginState.USER_EXITED.name

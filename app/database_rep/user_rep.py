@@ -9,14 +9,19 @@ logger = get_logger(__name__)
 
 
 
-async def get_user_info(user_id:int, phone_number: str):
+async def get_user_info(user_id:int, phone_number: str= None):
     try:
-        query = select(User).where(
-            or_(
+        if phone_number is None:
+            query = select(User).where(
                 User.user_id == user_id,
-                User.phone_number == phone_number
             )
-        )
+        else:
+            query = select(User).where(
+                or_(
+                    User.user_id == user_id,
+                    User.phone_number == phone_number
+                )
+            )
         return await database.fetch_one(query)
     except Exception as e:
         logger.error(f"Unexpect error: {e}")
@@ -58,7 +63,7 @@ async def get_user_by_phone_number(phone_number:str):
         query = select(User).where(
             User.phone_number == phone_number
         )
-        return True,await database.fetch_one(query)
+        return await database.fetch_one(query)
     except Exception as e:
         logger.error(f'Unexpected error: {e}')
         raise e
