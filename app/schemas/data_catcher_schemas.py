@@ -2,4 +2,5 @@ from pydantic import BaseModel
 
 class CfResponse(BaseModel):
     status: str
-    result: list
+    result: list = None
+    comment: str = None

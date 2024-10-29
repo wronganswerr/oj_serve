@@ -127,10 +127,11 @@ async def register(user_info:UserInfo):
         logger.info(f'user_info: {user_info} need register')
         
         for x in user_info.pass_word:
-            if (x > 'a' and x < 'z') or \
-            (x > 'A' and x < 'Z') or (x >'0' and x < '9'):
+            if (x >= 'a' and x <= 'z') or \
+            (x >= 'A' and x <= 'Z') or (x >='0' and x <= '9'):
                 pass
             else:
+                logger.info(f'unlegal chart {x}')
                 logger.info(f'user_info not allowed')
                 return LoginRespon(
                     state= UserLoginState.REGISTER_PASSWORD_UNLEGAL.value,
