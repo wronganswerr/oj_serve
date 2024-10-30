@@ -37,6 +37,7 @@ class AsyncHttpClient:
                 raise ValueError("Unsupported response type")
         except Exception as ex:
             logger.warning(f"AsyncHttpClient.request url:{url} ex:{ex}")
+            return None
         finally:
             logger.info(f"AsyncHttpClient.request url:{url} finally")
 

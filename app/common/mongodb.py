@@ -29,22 +29,48 @@ class MongodbManger:
         except Exception as e:
             logger.error(f'Unexpceted error: {e}')
 
-    async def select_doc(self, table_name, select_query:dict={}, filter_query:dict={}):
-        # 暂时不支持排序
+    # async def select_doc(self, table_name, select_query:dict={}, filter_query:dict={}):
+    #     # 暂时不支持排序
+    #     try:
+    #         table_object = self.db[table_name]
+
+    #         curson = table_object.find(select_query,projection=filter_query)
+
+    #         res = []
+    #         async for doc in curson:
+    #             doc = convert_int64(doc)        
+    #             # 对象类型无法 json化 特此转换一下
+    #             if '_id' in doc:
+    #                 doc['_id']= str(doc['_id'])
+    #             res.append(doc)
+
+    #         logger.info(f'query: {[select_query,filter_query]} response: {res}')
+            
+    #         return res
+    #     except Exception as e:
+    #         logger.error(f'Unexpected error: {e}')
+    #         return None
+    
+    async def select_doc(self, table_name, select_query: dict = {}, filter_query: dict = {}, sort_query: dict = {}, limit: int = 0):
         try:
             table_object = self.db[table_name]
 
-            curson = table_object.find(select_query,projection=filter_query)
+            # 添加排序和限制
+            cursor = table_object.find(select_query, projection=filter_query)
+            if sort_query:
+                cursor = cursor.sort(list(sort_query.items()))
+            if limit > 0:
+                cursor = cursor.limit(limit)
 
             res = []
-            async for doc in curson:
-                doc = convert_int64(doc)        
+            async for doc in cursor:
+                doc = convert_int64(doc)
                 # 对象类型无法 json化 特此转换一下
                 if '_id' in doc:
-                    doc['_id']= str(doc['_id'])
+                    doc['_id'] = str(doc['_id'])
                 res.append(doc)
 
-            logger.info(f'query: {[select_query,filter_query]} response: {res}')
+            logger.info(f'query: {[select_query, filter_query, sort_query, limit]} response: {res[:min(len(res),10)]}')
             
             return res
         except Exception as e:

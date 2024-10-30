@@ -28,6 +28,9 @@ class MemroyManger():
             atcodersloved=0
         )
 
+        self.similar_redis_dict = dict() # key s_ value
+        self.similar_redis_dict_lock = asyncio.Lock()
+
     async def set_user_info_memory(self, token, user_info:UserInfo):
         async with self.set_lock_user_info_memory:
             try:
@@ -48,7 +51,26 @@ class MemroyManger():
                 return None
             return self.user_info_memory[token] # UserInfo
         except Exception as e:
-            logger.info(f"Unexpect error: {e}")
+            logger.error(f"Unexpect error: {e}")
             return None
+        
+    async def similar_redis_query_key(self, key:str):
+        async with self.similar_redis_dict_lock:
+            try:
+                if key in self.similar_redis_dict:
+                    return self.similar_redis_dict[key]
+                else:
+                    return None
+            except Exception as e:
+                logger.error(f"Unexpect error: {e}")
+                return None
+    
+    async def similar_redis_set_key_value(self, key:str, value):
+        async with self.similar_redis_dict_lock:
+            try:
+                self.similar_redis_dict[key] = value
+            except Exception as e:
+                logger.error(f"Unexpect error: {e}")
+                return None
 
 memroy_manger = MemroyManger()
