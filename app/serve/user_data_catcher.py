@@ -179,11 +179,11 @@ async def main():
         await database.disconnect()
 
         with open(f'{catcher.data_path}/log.out','a') as f:
-            f.write(f'data_catcher;success;{now};;')
+            f.write(f'data_catcher;success;{now};;\n')
 
     except Exception as e:
         with open(f'{catcher.data_path}/log.out','a') as f:
-            f.write(f'data_catcher;error;{now};{e};')
+            f.write(f'data_catcher;error;{now};{e};\n')
 
 if __name__ == "__main__":
     # python -m app.serve.user_data_catcher

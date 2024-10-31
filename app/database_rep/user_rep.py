@@ -137,7 +137,7 @@ async def update_user_info(user_id: int, value:dict):
     
 async def get_have_cf_name_user_id()->List[User]:
     try:
-        query = select(User.user_id, User.codeforcesrating, User.name).where(
+        query = select(User.user_id, User.codeforcesrating, User.name, User.codeforcesname).where(
             User.codeforcesname != None
         )
         res = await database.fetch_all(query)

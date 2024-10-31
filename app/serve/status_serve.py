@@ -27,12 +27,12 @@ logger = get_logger(__name__)
 
 
 
-async def get_user_info(user_id:int, user_rating:int, user_name:str)->dict:
+async def get_user_info(user_id:int, user_rating:int, user_name:str, user_cf_name:str)->dict:
     
     key = f'get_user_status|last_time|{user_id}'
     info_in_memory = await memroy_manger.similar_redis_query_key(key)
     if info_in_memory is not None:
-        if info_in_memory["time"] + datetime.timedelta(hours=1) > datetime.datetime.now():
+        if info_in_memory["time"] + datetime.timedelta(minutes=30) > datetime.datetime.now():
             return info_in_memory["content"]
     
     res = await mongodb_manger.select_doc(MongoTable.USER_STATUS.value,
@@ -74,6 +74,7 @@ async def get_user_info(user_id:int, user_rating:int, user_name:str)->dict:
     
     user_info = {
         "user_name": user_name,
+        "user_codeforces_name": user_cf_name,
         "rating": user_rating,
         "solve_problem_today": today_ac_num,
         "solve_problem_this_week": this_week_ac_num,
@@ -86,14 +87,13 @@ async def get_user_info(user_id:int, user_rating:int, user_name:str)->dict:
     })
 
     return user_info
-
     
 
 async def user_rank_info()->ListResponse:
     user_list = await user_rep.get_have_cf_name_user_id()
     user_info_list = []
     for user in user_list:
-        user_info_list.append(await get_user_info(user.user_id, user.codeforcesrating, user.name))
+        user_info_list.append(await get_user_info(user.user_id, user.codeforcesrating, user.name, user.codeforcesname))
     
     return ListResponse(
         size= len(user_info_list),
