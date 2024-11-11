@@ -78,11 +78,27 @@ async def get_user_status(_self, user_id, limit_l, limit_r) -> list[Status]:
         )
 
         if _self:
+            # 此处搜索有问题 慎用
             query = base_query.where(
                 Status.user_id == user_id,
             ).order_by(Status.when.desc()).limit(limit_r-limit_l+1).offset(limit_l-1)
         else:
             query = base_query.order_by(Status.when.desc()).limit(limit_r-limit_l+1).offset(limit_l-1)
+        
+        data = await database.fetch_all(query)
+        logger.debug(f'sql: {query}, res: {data}')
+        return data
+
+    except Exception as e:
+        logger.error(f'Unexpected error: {e}', exc_info=True)
+        raise e
+
+async def get_user_problem_status(user_id, problem_id, limit_num) -> list[Status]:
+    try:
+        query = select(Status).where(
+            Status.user_id == user_id,
+            Status.problem_id == problem_id
+        ).order_by(Status.when.desc()).limit(limit_num)
         
         data = await database.fetch_all(query)
         logger.debug(f'sql: {query}, res: {data}')
@@ -138,6 +154,19 @@ async def update_user_info(user_id: int, value:dict):
 async def get_have_cf_name_user_id()->List[User]:
     try:
         query = select(User.user_id, User.codeforcesrating, User.name, User.codeforcesname).where(
+            User.codeforcesname != None
+        )
+        res = await database.fetch_all(query)
+        logger.debug(f'sql: {query}, res: {res}')
+        
+        return res
+    except Exception as e:
+        logger.error(f'Unexpected error: {e}', exc_info=True)
+        raise e
+
+async def get_all_user_cf_name() -> List[User]:
+    try:
+        query = select(User.user_id, User.codeforcesname).where(
             User.codeforcesname != None
         )
         res = await database.fetch_all(query)

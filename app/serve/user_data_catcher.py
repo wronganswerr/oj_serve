@@ -9,7 +9,7 @@ from app.common.unity.http_client import AsyncHttpClient
 from app.schemas.data_catcher_schemas import CfResponse
 from app.common.enums.common_enum import ExecuteState
 from app.common.core.logger import get_logger
-
+from app.common.models.users import User
 from app.database_rep import user_rep
 logger = get_logger(__name__)
 
@@ -22,6 +22,8 @@ codeforce_api = {
     "user_info" : "https://codeforces.com/api/user.info?handles={UserNameList}&checkHistoricHandles=true",
 
     "user_status": "https://codeforces.com/api/user.status?handle={UserName}&from={begin_submission_id}&count={end_submission_id}" # 获取用户的提交,
+
+    ""
 }
 
 
@@ -30,6 +32,7 @@ class UserDataCatcherCodeforces:
         self.data_path = './runtime/catcher_data'
         self.mongo_db = None
         self.httpclient = AsyncHttpClient()
+        self.user:list[User] = []
 
     async def request(self, url)->CfResponse:
         response = await self.httpclient.request('GET',url=url,response_type="json")
@@ -82,6 +85,10 @@ class UserDataCatcherCodeforces:
                     else:
                         need_insert_list = []
                         for user_statu in res.result:
+                            if "verdict" not in user_statu:
+                                # 还未有结果的记录 当次更新失效
+                                need_insert_list.clear()
+                                break
                             if user_statu["id"] > last_user_status_id:
                                 user_statu["user_id"] = user_id
                                 need_insert_list.append(user_statu)
@@ -89,7 +96,8 @@ class UserDataCatcherCodeforces:
                                 break
                         if len(need_insert_list) == 0:
                             break 
-                        await mongodb_manger.insert_doc(MongoTable.USER_STATUS.value, need_insert_list)
+                        if len(need_insert_list) > 0:
+                            await mongodb_manger.insert_doc(MongoTable.USER_STATUS.value, need_insert_list)
                         print(user_cf_name, 'insert', len(need_insert_list))
                         begin += step
                 else:
@@ -106,60 +114,44 @@ class UserDataCatcherCodeforces:
     
     
     async def update_info_into_db(self):
-        with open(f'{self.data_path}/test.1.json','r') as f:
-            user_data = json.load(f)
-        
-        for user in user_data:
-            if "user_id" not in user or True:
-                res = await user_rep.get_user_id_with_user_name(user["WAOJ"])
-                if res is not None:
-                    user["user_id"] = res.user_id
-                else:
-                    continue
-
-            await self.api_cf_get_user_status(user["user_id"], user["codeforcesname"]) 
-
-            if "user_id" in user:
-                res = await user_rep.update_user_info(user["user_id"],{
-                    "codeforcesrating": user["codeforcesrating"],
-                    "codeforcesname": user["codeforcesname"]
+        for user in self.user:
+            await self.api_cf_get_user_status(user.user_id, user.codeforcesname)
+            print(user.codeforcesname, user.codeforcesrating)
+            res = await user_rep.update_user_info(user.user_id,{
+                    "codeforcesrating": user.codeforcesrating,
                 })
             
 
-        with open(f'{self.data_path}/test.1.json','w') as f:
-            json.dump(user_data, f, ensure_ascii=False, indent=2)
-
 
     async def get_user_cf_info(self):
-        with open(f'{self.data_path}/test.in.json','r') as f:
-                in_data = json.load(f)
+        # with open(f'{self.data_path}/test.in.json','r') as f:
+        #         in_data = json.load(f)
 
         name_str = ""
 
-        cf_name_index = dict()
+        cf_name_index:dict[str, int] = dict()
 
-        for index,info in enumerate(in_data):
-            cf_name_index[info["codeforcesname"]] = index
-        
-        for user in in_data:
-            name_str += user["codeforcesname"] + ';'
-        
+        for index, user in enumerate(self.user):
+            cf_name_index[user.codeforcesname] = index
+            name_str += user.codeforcesname + ';'
+
         res = await self.api_cf_get_user_info(name_str)
+
         if res.status == 'OK':
-            with open(f'{self.data_path}/test.json','w') as f:
-                json.dump(res.model_dump(exclude_none=True), f, ensure_ascii=False, indent=2)
             
             for user_info in res.result:
                 if user_info["handle"] in cf_name_index:
                     if "rating" in user_info:
-                        in_data[cf_name_index[user_info["handle"]]]["codeforcesrating"] = user_info["rating"]
+                        self.user[cf_name_index[user_info["handle"]]].codeforcesrating = user_info["rating"]
                     else:
-                        in_data[cf_name_index[user_info["handle"]]]["codeforcesrating"] = 0
+                        self.user[cf_name_index[user_info["handle"]]].codeforcesrating = 0
                 else:
-                    in_data[cf_name_index[user_info["handle"]]]["codeforcesrating"] = 0
-            with open(f'{self.data_path}/test.1.json','w') as f:
-                json.dump(in_data, f, ensure_ascii=False, indent=2)
+                    self.user[cf_name_index[user_info["handle"]]].codeforcesrating = 0
+        else:
+            raise ValueError('http error')   
     
+    async def get_user_info(self):
+        self.user = await user_rep.get_all_user_cf_name()
 
 
 async def main():
@@ -171,6 +163,7 @@ async def main():
 
         await mongodb_manger.get_mongodb_connection()
 
+        await catcher.get_user_info()
         await catcher.get_user_cf_info()
         await catcher.update_info_into_db()
 
@@ -182,6 +175,7 @@ async def main():
             f.write(f'data_catcher;success;{now};;\n')
 
     except Exception as e:
+        logger.error(f'yxn error: {e}',exc_info=True)
         with open(f'{catcher.data_path}/log.out','a') as f:
             f.write(f'data_catcher;error;{now};{e};\n')
 

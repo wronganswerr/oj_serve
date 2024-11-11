@@ -32,7 +32,7 @@ async def get_user_info(user_id:int, user_rating:int, user_name:str, user_cf_nam
     key = f'get_user_status|last_time|{user_id}'
     info_in_memory = await memroy_manger.similar_redis_query_key(key)
     if info_in_memory is not None:
-        if info_in_memory["time"] + datetime.timedelta(minutes=30) > datetime.datetime.now():
+        if info_in_memory["time"] + datetime.timedelta(minutes=5) > datetime.datetime.now():
             return info_in_memory["content"]
     
     res = await mongodb_manger.select_doc(MongoTable.USER_STATUS.value,
@@ -46,14 +46,17 @@ async def get_user_info(user_id:int, user_rating:int, user_name:str, user_cf_nam
     ac_problem_dict = dict() # problem: first_ac_time
 
     for stat in res:
-        if stat["verdict"] == "OK":
-            problem_key = f'{stat["problem"]["contestId"]}{ ["index"]}'
-            if problem_key not in ac_problem_dict:
-                ac_problem_dict[problem_key] = datetime.datetime.fromtimestamp(stat["creationTimeSeconds"])
-            else:
-                # 寻找最早的ac记录
-                ac_problem_dict[problem_key] = min(datetime.datetime.fromtimestamp(stat["creationTimeSeconds"]), ac_problem_dict[problem_key])
-    
+        try:
+            if stat["verdict"] == "OK":
+                problem_key = f'{stat["problem"]["contestId"]}{stat["problem"]["index"]}'
+                if problem_key not in ac_problem_dict:
+                    ac_problem_dict[problem_key] = datetime.datetime.fromtimestamp(stat["creationTimeSeconds"])
+                else:
+                    # 寻找最早的ac记录
+                    ac_problem_dict[problem_key] = min(datetime.datetime.fromtimestamp(stat["creationTimeSeconds"]), ac_problem_dict[problem_key])
+        except Exception as e:
+            logger.error(f'Unexpected error: {e},sta :{stat}')
+
     today_ac_num = 0
     this_week_ac_num = 0
     accumulate_ac_num = 0
@@ -98,4 +101,17 @@ async def user_rank_info()->ListResponse:
     return ListResponse(
         size= len(user_info_list),
         content= user_info_list
+    )
+
+async def user_status(user_id, problem_id, limit_num)->list:
+    logger.info(f'{user_id} {problem_id}')
+    data = await user_rep.get_user_problem_status(user_id, problem_id, limit_num) 
+    logger.info(f'yxn debug {data}')
+    user_status_list = []
+    for state in data:
+        user_status_list.append(dict(state))
+    
+    return ListResponse(
+        size= len(user_status_list),
+        content= user_status_list
     )

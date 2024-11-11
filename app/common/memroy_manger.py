@@ -11,7 +11,7 @@ class MemroyManger():
         self.set_lock_user_info_memory = asyncio.Lock()
         self.supper_man_info = UserInfo()
         self.supper_man_info.role = 0
-        self.supper_man_info.user_id = 0
+        self.supper_man_info.user_id = 1
         self.user_info_memory["visitor"] = UserInfo(
             user_id=0,
             user_name='',
