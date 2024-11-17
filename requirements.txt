@@ -9,3 +9,5 @@ python-dotenv
 pydantic_settings
 cryptography
 alembic
+selenium
+beautifulsoup4

@@ -17,7 +17,7 @@ class Example(BaseModel):
 
 class ProblemMG(BaseObject):
     memorylimit: int
-    timelimit: int
+    timelimit: float
     problemtitle: str
     problemmain: str
     inputdescribe: str
@@ -27,4 +27,7 @@ class ProblemMG(BaseObject):
     data: List[Example] = []
     hash_id: str = ''
     created_at: datetime.datetime = datetime.datetime.now()
+    oj_from: str = 'waoj'
+    note:str = ""
+
     
