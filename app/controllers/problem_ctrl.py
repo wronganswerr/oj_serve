@@ -3,9 +3,11 @@ from typing import Optional
 from fastapi import HTTPException,Depends
 from app.common.core.config import config
 from app.schemas.response_schemas import response_model
-from app.schemas.problem_schemas import (ProblemResponse, RequestProblem, AddRequest, 
+from app.schemas.problem_schemas import (RequestProblem, AddRequest, 
                                          AddResponse, ExecuteResponse, SubmitProblem)
 from app.serve import user_serve, problem_serve
+
+from app.schemas.common_schemas import ListResponse
 
 from app.common.models.mongo_problem import ProblemMG
 from app.common.core.logger import get_logger
@@ -13,8 +15,8 @@ logger = get_logger(__name__)
 
 router = APIRouter()
 
-@router.get("/get_all_problem_id", response_model=ProblemResponse)
-@response_model(ProblemResponse)
+@router.get("/get_all_problem_id", response_model=ListResponse)
+@response_model(ListResponse)
 async def get_all_problem_id(user_role= Depends(user_serve.get_user_role_by_token)):
     try:
         logger.info(f'{user_role}')
@@ -38,8 +40,8 @@ async def get_problem_detile(problem_req: RequestProblem):
         raise HTTPException(500, "Internal Server Error")
     # return 'ok'
 
-@router.get("/get_user_problem_status", response_model= ProblemResponse)
-@response_model(ProblemResponse)
+@router.get("/get_user_problem_status", response_model= ListResponse)
+@response_model(ListResponse)
 async def get_user_problem_status(user_id= Depends(user_serve.get_user_id_by_token)):
     try:
         res = await problem_serve.get_user_problem_status(user_id)
@@ -94,3 +96,26 @@ async def submit_prblem(request: SubmitProblem, user_id= Depends(user_serve.get_
     except Exception as e:
         logger.error(e, exc_info=True)
         raise HTTPException(500, "Internal Server Error")
+    
+
+@router.get("/get_problem_form_oj_no_filter",response_model= ListResponse)
+@response_model(ListResponse)
+async def get_problem_form_oj_no_filter(oj_from:str, page_index:int, page_size:int, user_role= Depends(user_serve.get_user_role_by_token)):
+    try:
+        logger.info(f'{user_role}')
+        res = await problem_serve.get_problem_form_oj_no_filter(oj_from, page_index, page_size)
+        return res
+    except Exception as e:
+        logger.error(e,exc_info= True)
+        raise HTTPException(500,"Internal Server Error")
+    
+@router.get("/get_problem_number",response_model= ListResponse)
+@response_model(ListResponse)
+async def get_problem_number(user_role= Depends(user_serve.get_user_role_by_token)):
+    try:
+        logger.info(f'{user_role}')
+        res = await problem_serve.get_dif_problem_number()
+        return res
+    except Exception as e:
+        logger.error(e,exc_info= True)
+        raise HTTPException(500,"Internal Server Error")

@@ -46,7 +46,7 @@ start() {
     mkdir -p "${LOG_DIR}"
     mkdir -p "${PID_DIR}"
 
-    nohup python -m app.main >> ${CONSOLE_LOG_FILE}  2>&1 &
+    nohup python -m app.main > ${CONSOLE_LOG_FILE}  2>&1 &
 
     local pid=$!
     # TODO: Check if the server is started successfully...

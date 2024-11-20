@@ -7,3 +7,8 @@ class ExecuteState(Enum):
 class JudgeLanguage(Enum):
     CPP = 'cpp'
     PYTHON = 'python'
+
+class ProblemOJ(Enum):
+    WAOJ = 'waoj'
+    CODEFORCES = 'codeforces'
+    ATCODER = 'atcoder'

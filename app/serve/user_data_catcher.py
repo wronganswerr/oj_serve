@@ -275,7 +275,7 @@ class UserDataCatcherCodeforces:
             options.add_argument("--window-size=1920,1050")
             options.add_argument("--disable-blink-features=AutomationControlled")
 
-            options.add_argument('user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36')
+            options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36')
             options.add_experimental_option("excludeSwitches", ["enable-automation"])
             options.add_experimental_option('useAutomationExtension', False)
             
@@ -292,7 +292,7 @@ class UserDataCatcherCodeforces:
             driver.get(url)
             self.simulate_human_behavior(driver)
             
-            element = WebDriverWait(driver, 30).until(
+            element = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.CLASS_NAME, "problem-statement"))
             )
 
@@ -303,10 +303,13 @@ class UserDataCatcherCodeforces:
         except TimeoutException:
             try:
                 logger.warning('being prove human')
+                fail_path = os.path.join(html_path, f'{contest_id}_{index}.html')
+                with open(fail_path, 'w') as f:
+                    f.write(driver.page_source)
                 time.sleep(2)
-                selenium_element = driver.find_element(By.ID, 'aZkl3')
+                selenium_element = driver.find_element(By.ID, 'cf-chl-widget-kzdv0_response')
                 selenium_element.click()
-                element = WebDriverWait(driver, 30).until(
+                element = WebDriverWait(driver, 20).until(
                     EC.presence_of_element_located((By.CLASS_NAME, "problem-statement"))
                 )
                 fail_path = os.path.join(html_path, f'{contest_id}_{index}.html')
@@ -363,104 +366,114 @@ class UserDataCatcherCodeforces:
             tmp_list = ['```\n'] + tmp_list + ['```\n']
         return tmp_list
 
-    async def analysis_problem_html(self, contest_id, index):
-        html_path = os.path.join(self.data_path,self.problem_html_dir)
-        fail_path = os.path.join(html_path, f'{contest_id}_{index}.html')
-        soup = BeautifulSoup(open(fail_path, 'r', encoding='utf-8'), 'html.parser')
-        soup = soup.find('div', class_='problem-statement')
-
-
-        divs = soup.find('div', class_='title')
-        # problem_info.problemtitle = next(divs.stripped_strings) #返回的生成器
-        text_generator = divs.stripped_strings
-        problem_title = get_x_ele(text_generator,1)
-
-        divs = soup.find('div',class_ = 'time-limit')
-        text_generator = divs.stripped_strings
-        time_limit = float(get_x_ele(text_generator,2).split(' ')[0])
-
-        divs = soup.find('div',class_ = 'memory-limit')
-        text_generator = divs.stripped_strings
-        memory_limit = int(get_x_ele(text_generator,2).split(' ')[0])
-
-        all_div = list(soup.children)
-
-        problem_div:Tag = all_div[1]
-        input_div: Tag = all_div[2]
-        output_div: Tag = all_div[3]
-        sample_div: Tag = all_div[4]
-
-        note_div: Tag = None
-        if len(all_div) >= 6:
-            note_div = all_div[5]
-
-        problem_main_list = await self.dfs(problem_div)
-        input_des_list = await self.dfs(input_div)
-        output_des_list = await self.dfs(output_div)
-        sample_des_list = await self.dfs(sample_div)
-        
-        if note_div is not None:
-            note_list = await self.dfs(note_div)
-        else:
-            note_list = []
-        
-        problem_main_str = ""
-        for i_str in problem_main_list:
-            problem_main_str += i_str + " "
-
-        input_des_str = ""
-        for i_str in input_des_list[1:]:
-            input_des_str += i_str + " "
-
-        output_des_str = ""
-        for i_str in output_des_list[1:]:
-            output_des_str += i_str + " "
-
-        note_des_str = ""
-        for i_str in note_list[1:]:
-            note_des_str += i_str + " "
-
-        example_list = []
-        str_tmp = ""
-        for index,i_str in enumerate(sample_des_list):
-            if i_str == 'Example' or i_str == 'Examples':
-                str_tmp = ""
-                example_list.append({})
-            elif i_str == 'Input':
-                # print(str_tmp)
-                if len(str_tmp) > 0:
-                    example_list[-1]["output"] = str_tmp
-                    example_list.append({})
-                str_tmp = ""
-                
-            elif i_str == 'Output':
-                example_list[-1]["input"] = str_tmp
-                str_tmp = ""
+    async def analysis_problem_html(self, contest_id, index, offline_path: bool = False):
+        try:
+            if not offline_path:
+                html_path = os.path.join(self.data_path,self.problem_html_dir)
+                fail_path = os.path.join(html_path, f'{contest_id}_{index}.html')
             else:
-                if i_str == '\n':
-                    if str_tmp == "" or str_tmp[-1:] == "\n":
-                        pass
+                fail_path = os.path.join(self.data_path,'off_line_data','problem_html',f'{contest_id}_{index}.html')
+                if not os.path.exists(fail_path):
+                    logger.warning(f'{fail_path} not find maybe pdf')
+                    return 
+            soup = BeautifulSoup(open(fail_path, 'r', encoding='utf-8'), 'html.parser')
+            soup = soup.find('div', class_='problem-statement')
+
+
+            divs = soup.find('div', class_='title')
+            # problem_info.problemtitle = next(divs.stripped_strings) #返回的生成器
+            text_generator = divs.stripped_strings
+            problem_title = get_x_ele(text_generator,1)
+
+            divs = soup.find('div',class_ = 'time-limit')
+            text_generator = divs.stripped_strings
+            time_limit = float(get_x_ele(text_generator,2).split(' ')[0])
+
+            divs = soup.find('div',class_ = 'memory-limit')
+            text_generator = divs.stripped_strings
+            memory_limit = int(get_x_ele(text_generator,2).split(' ')[0])
+
+            all_div = list(soup.children)
+
+            problem_div:Tag = all_div[1]
+            input_div: Tag = all_div[2]
+            output_div: Tag = all_div[3]
+            sample_div: Tag = all_div[4]
+
+            note_div: Tag = None
+            if len(all_div) >= 6:
+                note_div = all_div[5]
+
+            problem_main_list = await self.dfs(problem_div)
+            input_des_list = await self.dfs(input_div)
+            output_des_list = await self.dfs(output_div)
+            sample_des_list = await self.dfs(sample_div)
+            
+            if note_div is not None:
+                note_list = await self.dfs(note_div)
+            else:
+                note_list = []
+            
+            problem_main_str = ""
+            for i_str in problem_main_list:
+                problem_main_str += i_str + " "
+
+            input_des_str = ""
+            for i_str in input_des_list[1:]:
+                input_des_str += i_str + " "
+
+            output_des_str = ""
+            for i_str in output_des_list[1:]:
+                output_des_str += i_str + " "
+
+            note_des_str = ""
+            for i_str in note_list[1:]:
+                note_des_str += i_str + " "
+
+            example_list = []
+            str_tmp = ""
+            for index,i_str in enumerate(sample_des_list):
+                if i_str == 'Example' or i_str == 'Examples':
+                    str_tmp = ""
+                    example_list.append({})
+                elif i_str == 'Input':
+                    # print(str_tmp)
+                    if len(str_tmp) > 0:
+                        example_list[-1]["output"] = str_tmp
+                        example_list.append({})
+                    str_tmp = ""
+                    
+                elif i_str == 'Output':
+                    example_list[-1]["input"] = str_tmp
+                    str_tmp = ""
+                else:
+                    if i_str == '\n':
+                        if str_tmp == "" or str_tmp[-1:] == "\n":
+                            pass
+                        else:
+                            str_tmp += i_str
                     else:
                         str_tmp += i_str
-                else:
-                    str_tmp += i_str
-            if index+1 == len(sample_des_list):
-                example_list[-1]["output"] = str_tmp
+                if index+1 == len(sample_des_list):
+                    example_list[-1]["output"] = str_tmp
+            
+            problem = ProblemMG(
+                problemtitle=problem_title,
+                timelimit= time_limit,
+                memorylimit=memory_limit,
+                problemmain=problem_main_str,
+                inputdescribe=input_des_str,
+                outputdescribe=output_des_str,
+                example = [Example(**tmp) for tmp in example_list],
+                oj_from="codeforces",
+                hash_id=get_hash_id(problem_title),
+                note=note_des_str
+            )
+            return problem
+        except Exception as e:
+            logger.error(f'Unexpected error: {e}')
+            return None
         
-        problem = ProblemMG(
-            problemtitle=problem_title,
-            timelimit= time_limit,
-            memorylimit=memory_limit,
-            problemmain=problem_main_str,
-            inputdescribe=input_des_str,
-            outputdescribe=output_des_str,
-            example = [Example(**tmp) for tmp in example_list],
-            oj_from="codeforces",
-            hash_id=get_hash_id(problem_title),
-            note=note_des_str
-        )
-        return problem
-    
     async def insert_new_problem(self, contest_id,index,problem:ProblemMG):
         res = await mongodb_manger.insert_doc(MongoTable.PROBLEM.value,[problem.model_dump()])
         logger.info(f'sucessful insert id {res.inserted_ids}')

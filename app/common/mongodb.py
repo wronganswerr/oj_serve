@@ -51,7 +51,16 @@ class MongodbManger:
     #         logger.error(f'Unexpected error: {e}')
     #         return None
     
-    async def select_doc(self, table_name, select_query: dict = {}, filter_query: dict = {}, sort_query: dict = {}, limit: int = 0):
+    async def count_doc(self, table_name, select_query:dict={})->int:
+        try:
+            table_object = self.db[table_name]
+            return await table_object.count_documents(select_query)
+        except Exception as e:
+            logger.error(f'Unexpected error: {e}')
+            return None
+
+    async def select_doc(self, table_name, select_query: dict = {}, filter_query: dict = {}, sort_query: dict = {}, limit: int = 0,
+                         skip: int = 0)->list:
         try:
             table_object = self.db[table_name]
 
@@ -59,9 +68,13 @@ class MongodbManger:
             cursor = table_object.find(select_query, projection=filter_query)
             if sort_query:
                 cursor = cursor.sort(list(sort_query.items()))
+            
+            if skip > 0:
+                cursor = cursor.skip(skip)
+            
             if limit > 0:
                 cursor = cursor.limit(limit)
-
+            
             res = []
             async for doc in cursor:
                 doc = convert_int64(doc)
@@ -70,7 +83,7 @@ class MongodbManger:
                     doc['_id'] = str(doc['_id'])
                 res.append(doc)
 
-            logger.info(f'query: {[select_query, filter_query, sort_query, limit]} response: {res[:min(len(res),10)]}')
+            logger.debug(f'query: {[select_query, filter_query, sort_query, limit]} response: {res[:min(len(res),10)]}')
             
             return res
         except Exception as e:
@@ -110,5 +123,20 @@ class MongodbManger:
             logger.error(f"Unexpected error: {e}")
             return None
 
+    async def aggregate_doc(self, table_name: str, pipeline:list):
+        try:
+            table_object = self.db[table_name]
+            cursor = table_object.aggregate(pipeline)
+            res = []
+            async for doc in cursor:
+                doc = convert_int64(doc)
+                # 对象类型无法 json化 特此转换一下
+                if '_id' in doc:
+                    doc['_id'] = str(doc['_id'])
+                res.append(doc)
+            return res
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            return None
 
 mongodb_manger = MongodbManger()

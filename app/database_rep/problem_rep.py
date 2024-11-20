@@ -7,7 +7,8 @@ from app.common.models.problem import CFProblem
 from app.common.core.logger import get_logger
 
 logger = get_logger(__name__)
-async def get_user_problem_status(user_id:int):
+
+async def get_user_problem_status(user_id:int)->list[Status]:
     try:
         query = select(Status.problem_id).where(
             Status.user_id == user_id,
@@ -57,4 +58,13 @@ async def get_less_date_problem_codeforce(number:int)->list[CFProblem]:
     except Exception as e:
         logger.error(f'Unexpected error: {e}')
         return None
-        
+
+async def get_problem_info_cf(_id_list:list)->list[CFProblem]:
+    try:
+        query = select(CFProblem.contest_id,CFProblem.contest_index,CFProblem.id_in_mongodb).where(
+            CFProblem.id_in_mongodb.in_(_id_list)
+        ).order_by(CFProblem.id_in_mongodb.desc())
+        return await database.fetch_all(query)
+    except Exception as e:
+        logger.error(f'Unexpected error: {e}')
+        return None

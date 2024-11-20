@@ -8,8 +8,8 @@ from app.controllers.websocket_ctrl import router as websocket_router
 
 api_router = APIRouter()
 
-api_router.include_router(app_router, prefix='', tags=['init'])
-api_router.include_router(user_router, prefix='/user', tags=['user'])
-api_router.include_router(problem_router, prefix='/problem', tags=['problem'])
-api_router.include_router(status_router, prefix='/status', tags=['status'])
-api_router.include_router(websocket_router, prefix='/ws', tags=['websocket'])
+api_router.include_router(app_router, prefix='/api', tags=['init'])
+api_router.include_router(user_router, prefix='/api/user', tags=['user'])
+api_router.include_router(problem_router, prefix='/api/problem', tags=['problem'])
+api_router.include_router(status_router, prefix='/api/status', tags=['status'])
+api_router.include_router(websocket_router, prefix='/api/ws', tags=['websocket'])

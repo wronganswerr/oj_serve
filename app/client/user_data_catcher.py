@@ -32,22 +32,40 @@ async def main():
 
         await mongodb_manger.get_mongodb_connection()
         # await catcher.get_problem_list()
-        need_prcess_problems = await problem_rep.get_less_date_problem_codeforce(1)
-        for ned_problem in need_prcess_problems:
-            # logger.error(f'claw html failed task stop!!! {ned_problem.contest_id} {ned_problem.contest_index}')
-            # break
-            logger.info(f'begin procee {ned_problem.contest_id} {ned_problem.contest_index}')
-            try:
-                if not await catcher.get_problem_detailed_info(ned_problem.contest_id,ned_problem.contest_index):
-                    logger.error(f'claw html failed task stop!!! {ned_problem.contest_id} {ned_problem.contest_index}')
-                    break
-                probelm = await catcher.analysis_problem_html(ned_problem.contest_id,ned_problem.contest_index)
-                await catcher.insert_new_problem(ned_problem.contest_id,ned_problem.contest_index,probelm)
-                logger.info(f'problem {ned_problem.contest_id} {ned_problem.contest_index} success processed')
-                time.sleep(random.randint(1,5))
+        # need_prcess_problems = await problem_rep.get_less_date_problem_codeforce(1000)
+        # tmp_list = []
+        # for problem in need_prcess_problems:
+        #     tmp_list.append({
+        #         "contest_id": problem.contest_id,
+        #         "contest_index": problem.contest_index
+        #     })
+        # with open('problem_id.json','w') as f:
+        #     json.dump(tmp_list,f)
+        # for ned_problem in need_prcess_problems:
+        #     # logger.error(f'claw html failed task stop!!! {ned_problem.contest_id} {ned_problem.contest_index}')
+        #     # break
+        #     logger.info(f'begin procee {ned_problem.contest_id} {ned_problem.contest_index}')
+        #     try:
+        #         if not await catcher.get_problem_detailed_info(ned_problem.contest_id,ned_problem.contest_index):
+        #             logger.error(f'claw html failed task stop!!! {ned_problem.contest_id} {ned_problem.contest_index}')
+        #             # break
+        #             time.sleep(random.randint(10,20))
+        #             continue
 
-            except Exception as e:
-                logger.error(f'Unexpected error: {e}')
+        #         probelm = await catcher.analysis_problem_html(ned_problem.contest_id,ned_problem.contest_index)
+        #         await catcher.insert_new_problem(ned_problem.contest_id,ned_problem.contest_index,probelm)
+        #         logger.info(f'problem {ned_problem.contest_id} {ned_problem.contest_index} success processed')
+        #         print(ned_problem.contest_id, ned_problem.contest_index)
+        #         time.sleep(random.randint(10,20))
+
+        #     except Exception as e:
+        #         logger.error(f'Unexpected error: {e}')
+        with open('problem_id.json','r') as f:
+            problem_id = json.load(f)
+        for problem in problem_id:
+            problem_model = await catcher.analysis_problem_html(problem["contest_id"],problem["contest_index"],True)
+            if problem_model is not None:
+                await catcher.insert_new_problem(problem["contest_id"],problem["contest_index"],problem_model)
         await database.disconnect()
 
 
@@ -59,5 +77,5 @@ async def main():
 
 if __name__ == "__main__":
     # python -m app.client.user_data_catcher
-    # nohup python -m app.client.user_data_catcher >> 1.out  2>&1 &
+    # nohup python -m app.client.user_data_catcher > 1.out  2>&1 &
     asyncio.run(main())

@@ -5,7 +5,7 @@ import shutil
 
 from bson import ObjectId
 from app.common.core.config import config
-from app.common.enums.common_enum import ExecuteState, JudgeLanguage
+from app.common.enums.common_enum import ExecuteState, JudgeLanguage, ProblemOJ
 from app.common.models.users import User
 from app.common.memroy_manger import memroy_manger
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -18,17 +18,18 @@ from app.common.mongodb import mongodb_manger
 from app.common.models.mongo_problem import ProblemMG, Example
 from app.common.unity.unity import get_hash_id
 from app.database_rep import problem_rep 
-from app.schemas.problem_schemas import ProblemResponse, RequestProblem, AddRequest, AddResponse, ExecuteResponse, JudgeMessage
+from app.schemas.problem_schemas import  RequestProblem, AddRequest, AddResponse, ExecuteResponse, JudgeMessage
+from app.schemas.common_schemas import ListResponse
 from app.actors.judge_process import process_judge_message
 
 logger = get_logger(__name__)
 
 
-def select_response(result):
+def select_response(result) -> ListResponse:
     if result is None:
         result = []
-    logger.info(result)
-    response = ProblemResponse(
+
+    response = ListResponse(
         size= len(result) or 0,
         content=result
     )
@@ -45,12 +46,71 @@ async def get_all_problem(user_role:int):
     if user_role_name != UserRole.SUPERMAN:
         select_query['is_hide'] = False
     
-    filter_query = {'hash_id':1, 'problemtitle':1}
+    filter_query = {'hash_id':1, 'problemtitle':1,'oj_from':1}
 
     result = await mongodb_manger.select_doc(MongoTable.PROBLEM.value, select_query, filter_query)
     
-    logger.info(f'get problem id list: {result}')
+    # logger.info(f'get problem id list: {result}')
     return select_response(result)
+
+async def get_dif_problem_number():
+    pipeline = [
+        {
+            '$group': {
+                '_id': '$oj_from',  # 按照oj_from字段进行分组
+                'count': { '$sum': 1 }  # 计算每个组的文档数量
+            }
+        }
+    ]
+    result = await mongodb_manger.aggregate_doc(MongoTable.PROBLEM.value, pipeline)
+    # logger.info(result)
+    problem_number = {}
+    for oj in ProblemOJ:
+        problem_number[oj.value] = 0
+
+    for x in result:
+        if x['_id'] == 'None':
+            problem_number['waoj'] += x['count']
+        else:
+            problem_number[x['_id']] += x['count']
+
+    return select_response([problem_number])
+
+async def get_problem_form_oj_no_filter(oj_name: int, page_index: int, page_size: int):
+    try:
+        oj = ProblemOJ(oj_name)
+    except Exception as e:
+        raise e
+    
+    # 之后的条件搜索 需要 通过 id 映射到 problem 信息
+    filter_query = {'hash_id':1, 'problemtitle':1,'oj_from':1}
+    select_query = {}
+    if oj == ProblemOJ.WAOJ:
+        select_query['$or'] = [
+            { 'oj_from': { '$exists': False } },
+            { 'oj_from': 'waoj' }
+        ]
+    else:
+        select_query['oj_from'] = oj.value
+    logger.info(select_query)
+    sort_query = {'_id':-1}
+
+    result = await mongodb_manger.select_doc(MongoTable.PROBLEM.value,
+                                          select_query,
+                                          filter_query,
+                                          sort_query,
+                                          page_size,
+                                          (page_index - 1) * page_size)
+    if oj == ProblemOJ.CODEFORCES:
+        info_list = await problem_rep.get_problem_info_cf([x['_id'] for x in result])
+        for index in range(len(info_list)):
+            result[index]["contest_id"] = info_list[index].contest_id
+            result[index]["contest_index"] = info_list[index].contest_index
+    elif oj == ProblemOJ.WAOJ:
+        # 显示作者
+        pass
+    return select_response(result)
+
 
 async def get_problem_specific_info(user_id:int,user_role:int,problem_id:str):
     try:
@@ -277,7 +337,7 @@ async def get_user_problem_status(user_id:int):
     if data == None or len(data) == 0:
         data = []
     
-    return ProblemResponse(
+    return ListResponse(
         size=len(data),
         content=[x.problem_id for x in data]
     )
@@ -310,7 +370,7 @@ async def get_problem_detile(problem_id:str):
 
     filter_query = {'memorylimit': 1, 'timelimit': 1, 'problemtitle': 1,
                     'problemmain': 1, 'inputdescribe':1, 'outputdescribe': 1,
-                    'example':1}
+                    'example':1,'oj_from':1,'note':1}
     select_query = {'_id': ObjectId(problem_id)}
 
     result = await mongodb_manger.select_doc(MongoTable.PROBLEM.value, select_query, filter_query)

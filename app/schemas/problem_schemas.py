@@ -5,9 +5,6 @@ class ExecuteResponse(BaseModel):
     state: int
     message: str
 
-class ProblemResponse(BaseModel):
-    size: int = 0
-    content: list = []
 
 class RequestProblem(BaseModel):
     problem_id: str

@@ -39,6 +39,10 @@ origins = [
     "http://localhost:8089",
     "http://192.168.1.11:8089",
     "http://192.168.1.11:8091",
+    "https://192.168.1.11:8081",  # 允许访问的前端应用的地址
+    "https://localhost:8089",
+    "https://192.168.1.11:8089",
+    "https://192.168.1.11:8091",
 ]
 
 # 添加 CORS 中间件
@@ -59,4 +63,7 @@ app.include_router(api_router)
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host=config.SERVER_HOST, port=config.SERVER_PORT,
-                log_level=config.LOG_LEVEL.lower(), reload=config.DEBUG_MODE)
+                log_level=config.LOG_LEVEL.lower(), reload=config.DEBUG_MODE,
+                ssl_keyfile="/etc/ssl/wongansweroj.online.key",
+                ssl_certfile="/etc/ssl/wongansweroj.online_bundle.crt",
+                ssl_ca_certs="/etc/ssl/wongansweroj.online_bundle.pem")
