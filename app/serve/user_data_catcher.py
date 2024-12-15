@@ -38,7 +38,6 @@ from app.common.unity.unity import get_hash_id
 
 logger = get_logger(__name__)
 
-
 codeforce_api = {
     "contest_list": "https://codeforces.com/api/contest.list", # 获取比赛
     

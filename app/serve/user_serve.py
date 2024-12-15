@@ -1,17 +1,18 @@
 from app.common.database import database
 from app.schemas.user_schemas import UserInfo,LoginRespon
 from app.database_rep import user_rep
-from app.common.enums.user_enum import UserLoginState
+from app.common.enums.user_enum import UserLoginState, CommonApiStatus
 from app.common.models.users import User
 from app.common.memroy_manger import memroy_manger
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import HTTPException, Depends
 from app.exceptions import MCException
-from app.schemas.common_schemas import ListResponse
+from app.schemas.common_schemas import ListResponse,CodeRespose
 from app.common.enums.user_enum import UserErrorCode
 import random
 import uuid
 import secrets
+import os
 from app.common.core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -33,9 +34,9 @@ async def creat_user_id():
 async def creat_token(user_id):
     # 生成一个16字节的随机令牌
     token = secrets.token_hex(16)
-    if not await memroy_manger.set_user_info_memory(token,user_id):
-        logger.warning(f'memory token faile')
-        return None
+    # if not await memroy_manger.set_user_info_memory(token,user_id):
+    #     logger.warning(f'memory token faile')
+    #     return None
     return token
 
 async def login(user_info: UserInfo, token_check: bool= False):
@@ -175,7 +176,7 @@ async def register(user_info:UserInfo):
 async def get_user_info_by_token(token: str):
     try:
         user_info = await memroy_manger.get_user_info_memory(token)
-        logger.info(f'get user_info form memory_manger {user_info}')
+        # logger.info(f'get user_info form memory_manger {user_info}')
         if not user_info:
             logger.error('can not find user_info')
             raise MCException(
@@ -234,6 +235,30 @@ async def get_user_status(_self, user_id, role, page_size, now_page):
         return ListResponse(
             size= total_number,
             content= status_list
+        )
+    
+    except Exception as e:
+        raise e
+
+async def get_user_submition_code(hash_id:str):
+    try:
+        object_status = await user_rep.get_user_submition_code(hash_id)
+        if object_status == None:
+            return  CodeRespose(
+                status= CommonApiStatus.FAIL.value,
+                code= ""
+            )
+        
+        code = "unfind"
+        file_path = os.path.join('/root/Judger', object_status.code_url[2:])
+
+        with open(file_path, 'r') as f:
+            code = f.read()
+        
+        
+        return CodeRespose(
+            status= CommonApiStatus.OK.value,
+            code= code
         )
     
     except Exception as e:

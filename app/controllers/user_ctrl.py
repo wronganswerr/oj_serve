@@ -4,8 +4,8 @@ from fastapi import HTTPException,Depends
 from app.common.core.config import config
 from app.schemas.response_schemas import response_model
 
-from app.schemas.user_schemas import UserInfo,LoginRespon,UserStatusRequery
-from app.schemas.common_schemas import ListResponse
+from app.schemas.user_schemas import UserInfo,LoginRespon,UserStatusRequery,UserSubmitionRequery
+from app.schemas.common_schemas import ListResponse,CodeRespose
 
 from app.exceptions import MCException
 from app.serve import user_serve
@@ -80,3 +80,12 @@ async def get_status(user_status_req: UserStatusRequery, user_id:int = Depends(u
         logger.error(e,exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server Error")
     
+@router.post('/get_submition_code', response_model=CodeRespose)
+@response_model(CodeRespose)
+async def get_status(user_status_req: UserSubmitionRequery, user_id:int = Depends(user_serve.get_user_id_by_token)):
+    try:
+        res = await user_serve.get_user_submition_code(user_status_req.hash_id)
+        return res
+    except Exception as e:
+        logger.error(e,exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal Server Error")

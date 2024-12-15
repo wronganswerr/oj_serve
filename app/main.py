@@ -64,6 +64,6 @@ app.include_router(api_router)
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host=config.SERVER_HOST, port=config.SERVER_PORT,
                 log_level=config.LOG_LEVEL.lower(), reload=config.DEBUG_MODE,
-                ssl_keyfile="/etc/ssl/wongansweroj.online.key",
-                ssl_certfile="/etc/ssl/wongansweroj.online_bundle.crt",
-                ssl_ca_certs="/etc/ssl/wongansweroj.online_bundle.pem")
+                ssl_keyfile="/etc/ssl/wrongansweroj.cn.key",
+                ssl_certfile="/etc/ssl/wrongansweroj.cn_bundle.crt",
+                ssl_ca_certs="/etc/ssl/wrongansweroj.cn_bundle.pem")

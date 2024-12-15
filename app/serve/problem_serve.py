@@ -2,6 +2,7 @@ import os
 import asyncio
 import datetime
 import shutil
+import json
 
 from bson import ObjectId
 from app.common.core.config import config
@@ -21,7 +22,7 @@ from app.database_rep import problem_rep
 from app.schemas.problem_schemas import  RequestProblem, AddRequest, AddResponse, ExecuteResponse, JudgeMessage
 from app.schemas.common_schemas import ListResponse
 from app.actors.judge_process import process_judge_message
-
+from app.common.unity.unity import get_search_id
 logger = get_logger(__name__)
 
 
@@ -392,7 +393,7 @@ async def submit_problem(problem_id:int, user_id:int, code:str, language:str):
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
             return ExecuteResponse(state=0, message="language not been supported")
-        
+        search_id = await get_search_id(user_id)
         judge_message = JudgeMessage(
             user_id= user_id,
             problem_id= problem_id,
@@ -400,7 +401,7 @@ async def submit_problem(problem_id:int, user_id:int, code:str, language:str):
             created_at= datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             online_oj_choose='waoj',
             language= language,
-            search_id= '114514'
+            search_id= search_id
         )
         serialized_value = judge_message.model_dump_json(exclude_none=True, exclude_unset=True, by_alias=True)
         # python -m app.client.judge_test
@@ -412,7 +413,12 @@ async def submit_problem(problem_id:int, user_id:int, code:str, language:str):
                     )
         result= await asyncio.gather(*send_tasks)
         logger.info(f'success send message: {result}')
-        return ExecuteResponse(state=1, message="IN QUEUE")
+        res_message = {
+            "message": "IN QUEUE",
+            "verdict": "IN QUEUE",
+            "hash_id": search_id
+        }
+        return ExecuteResponse(state=1, message=json.dumps(res_message))
     except Exception as e:
         logger.error(f'Unexpected error: {e}')
         raise e

@@ -8,6 +8,7 @@ logger = get_logger(__name__)
 class MemroyManger():
     def __init__(self) -> None:
         self.user_info_memory = dict() # token - user_id
+        self.user_id_token_map = dict()
         self.set_lock_user_info_memory = asyncio.Lock()
         self.supper_man_info = UserInfo()
         self.supper_man_info.role = 0
@@ -31,15 +32,31 @@ class MemroyManger():
         self.similar_redis_dict = dict() # key s_ value
         self.similar_redis_dict_lock = asyncio.Lock()
 
+    async def del_user_token(self,token,user_id):
+        await asyncio.sleep(24*60*60)
+        async with self.set_lock_user_info_memory:
+            if(token in self.user_info_memory):
+                del self.user_info_memory[token]
+            if(user_id in self.user_id_token_map):
+                del self.user_id_token_map[user_id]
+
+
     async def set_user_info_memory(self, token, user_info:UserInfo):
         async with self.set_lock_user_info_memory:
             try:
                 self.user_info_memory[token] = user_info
+                self.user_id_token_map[int(user_info.user_id)] = token
                 return True
             except Exception as e:
                 logger.error(f'Unexpected error: {e}')
                 return False
+        
+        asyncio.create_task(self.del_user_token(token,int(user_info.user_id)))
+        
     
+    async def get_user_info_by_user_id(self, token, user_info):
+        pass
+
     async def get_user_info_memory(self, token:str):
         try:
             

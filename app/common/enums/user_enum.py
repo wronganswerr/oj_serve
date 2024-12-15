@@ -1,5 +1,9 @@
 from enum import Enum
 
+class CommonApiStatus(Enum):
+    OK = 'OK'
+    FAIL = 'FAIL'
+
 class UserLoginState(Enum):
     ACCEPT = 0
     NOT_FIND_OBJECTIVE_USER = 1

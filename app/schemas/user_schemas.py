@@ -30,3 +30,6 @@ class UserStatusRequery(BaseModel):
     user_self: bool = False
     page_size: int = 10
     now_page: int = 0
+
+class UserSubmitionRequery(BaseModel):
+    hash_id: str

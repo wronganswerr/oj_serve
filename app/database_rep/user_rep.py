@@ -1,10 +1,12 @@
 from app.common.database import database
 from sqlalchemy import select, update, insert, delete, and_, or_, func, text, union_all, join,values
 from app.common.models.users import User, Status
+from app.common.models.message import Message
 from app.common.core.logger import get_logger
 from sqlalchemy.orm import aliased
 from app.common.memroy_manger import memroy_manger
 from typing import List
+import datetime
 
 logger = get_logger(__name__)
 
@@ -173,6 +175,31 @@ async def get_all_user_cf_name() -> List[User]:
         logger.debug(f'sql: {query}, res: {res}')
         
         return res
+    except Exception as e:
+        logger.error(f'Unexpected error: {e}', exc_info=True)
+        raise e
+
+async def add_user_message(user_id, content):
+    try:
+        new_model = Message()
+        new_model.user_id = user_id
+        new_model.content = content
+        new_model.send_datetime = datetime.datetime.now()
+        query = insert(Message).values(
+            **new_model.to_dict()
+        )
+        await database.execute(query)
+    except Exception as e:
+        logger.error(f'Unexpected error: {e}', exc_info=True)
+        raise e
+    
+async def get_user_submition_code(hash_id:str) -> Status:
+    try:
+        query = select(Status.code_url).where(
+            Status.hash_id == hash_id
+        )
+        data = await database.fetch_one(query)
+        return data
     except Exception as e:
         logger.error(f'Unexpected error: {e}', exc_info=True)
         raise e
