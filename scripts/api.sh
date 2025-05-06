@@ -16,6 +16,8 @@ CONFIG_DIR="${RUNTIME_DIR}/configs"
 
 DEFAULT_TAIL_LINES=20
 
+DATA_DIR="${RUNTIME_DIR}/data"
+
 build_env() {
     echo "Building environment for ${APP_NAME}..."
 
@@ -30,6 +32,9 @@ build_env() {
 
     echo "- Creating log directory..."
     mkdir -pv "${LOG_DIR}"
+
+    echo "- Creating data directory..."
+    mkdir -pv "${DATA_DIR}"
 
     echo "Environment for ${APP_NAME} built successfully"
 }
@@ -106,6 +111,21 @@ taillog() {
     fi
 }
 
+status() {
+    if [ -f "$PID_FILE" ]; then
+        PID=$(cat "$PID_FILE")
+        if ps -p $PID > /dev/null 2>&1; then
+            echo "daphne 正在运行，进程 ID 为 $PID"
+        else
+            echo "daphne 未运行，但 PID 文件存在，已删除 PID 文件"
+            rm "$PID_FILE"
+        fi
+    else
+        echo "daphne 未运行"
+    fi
+}
+
+
 case "$1" in
     build_env)
         build_env
@@ -127,6 +147,9 @@ case "$1" in
     taillog)
         shift
         taillog "$@"
+        ;;
+    status)
+        status
         ;;
     *)
         echo "Usage: $0 {start|stop|restart}"

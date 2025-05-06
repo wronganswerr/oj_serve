@@ -4,7 +4,7 @@ from fastapi import HTTPException,Depends
 from app.common.core.config import config
 from app.schemas.response_schemas import response_model
 from app.schemas.problem_schemas import (RequestProblem, AddRequest, 
-                                         AddResponse, ExecuteResponse, SubmitProblem)
+                                         AddResponse, ExecuteResponse, SubmitProblem, ProblemTitleRequest)
 from app.serve import user_serve, problem_serve
 
 from app.schemas.common_schemas import ListResponse
@@ -52,10 +52,10 @@ async def get_user_problem_status(user_id= Depends(user_serve.get_user_id_by_tok
     
 @router.post("/add_problem", response_model= ExecuteResponse)
 @response_model(ExecuteResponse)
-async def add_problem(new_prblem: AddRequest, user_role= Depends(user_serve.get_user_role_by_token)):
+async def add_problem(request: AddRequest, user_info= Depends(user_serve.get_user_info_by_token)):
     try:
-        logger.info(f'add new_problem {new_prblem.problem_title}')
-        res = await problem_serve.add_problem(new_prblem, user_role)
+        logger.info(f'add new_problem {request.problem_title}')
+        res = await problem_serve.add_problem(request, user_info)
         return res
     except Exception as e:
         logger.error(e,exc_info=True)
@@ -118,4 +118,16 @@ async def get_problem_number(user_role= Depends(user_serve.get_user_role_by_toke
         return res
     except Exception as e:
         logger.error(e,exc_info= True)
+        raise HTTPException(500,"Internal Server Error")
+    
+
+@router.post("/get_problem_title",response_model=ListResponse)
+@response_model(ListResponse)
+async def get_problem_title(request: ProblemTitleRequest, 
+                            user_role= Depends(user_serve.get_user_role_by_token)):
+    try:
+        res = await problem_serve.get_problem_title(request, user_role)
+        return res
+    except Exception as e:
+        logger.error(e, exc_info= True)
         raise HTTPException(500,"Internal Server Error")

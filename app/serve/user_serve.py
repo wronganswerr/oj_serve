@@ -22,8 +22,8 @@ bearer_scheme = HTTPBearer()
 async def creat_user_id():
     # 约定 user_id 为 在十进制下长度为16的 数字 1000000000000000
     while True:
-        random_num = random.randint(1,1e18)
-        user_id = 1e15 + (random_num % 1e15)
+        random_num = random.randint(1,10**18)
+        user_id = 10**15 + (random_num % 10**15)
         db_user_info = await user_rep.get_user_info(user_id)
         
         if db_user_info == None:
@@ -173,7 +173,7 @@ async def register(user_info:UserInfo):
 #         logger.error(f"Error checking current user token: {e}")
 #         raise HTTPException(status_code=500, detail="Internal server error")
 
-async def get_user_info_by_token(token: str):
+async def get_user_info_by_c_token(token: str):
     try:
         user_info = await memroy_manger.get_user_info_memory(token)
         # logger.info(f'get user_info form memory_manger {user_info}')
@@ -191,14 +191,17 @@ async def get_user_info_by_token(token: str):
         logger.error(f"Error checking current user token: {e}")
         raise e
 
+async def get_user_info_by_token(token: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+    return await get_user_info_by_c_token(token.credentials)
+
 async def get_user_id_by_token(token: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
     logger.info(f'get token {token.credentials}')
-    user_info = await get_user_info_by_token(token.credentials)
+    user_info = await get_user_info_by_c_token(token.credentials)
     user_id = user_info.user_id
     return user_id
     
 async def get_user_role_by_token(token: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
-    user_info:UserInfo = await get_user_info_by_token(token.credentials)
+    user_info:UserInfo = await get_user_info_by_c_token(token.credentials)
 
     user_role = user_info.role
 

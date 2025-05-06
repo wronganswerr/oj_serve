@@ -29,5 +29,6 @@ class ProblemMG(BaseObject):
     created_at: datetime.datetime = datetime.datetime.now()
     oj_from: str = 'waoj'
     note: str = ""
+    source: str = ""
 
     

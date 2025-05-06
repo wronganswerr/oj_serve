@@ -19,7 +19,8 @@ from app.common.mongodb import mongodb_manger
 from app.common.models.mongo_problem import ProblemMG, Example
 from app.common.unity.unity import get_hash_id
 from app.database_rep import problem_rep 
-from app.schemas.problem_schemas import  RequestProblem, AddRequest, AddResponse, ExecuteResponse, JudgeMessage
+from app.schemas.problem_schemas import  RequestProblem, AddRequest, AddResponse, ExecuteResponse, JudgeMessage, ProblemTitleRequest
+from app.schemas.user_schemas import UserInfo
 from app.schemas.common_schemas import ListResponse
 from app.actors.judge_process import process_judge_message
 from app.common.unity.unity import get_search_id
@@ -164,6 +165,7 @@ async def del_problem(user_id:int, user_role:int, problem_id:str):
 
 async def write_problem_data(input_path,output_path,data:Example):
     try:
+        # TODO: 这里同步的写入可能会造成事件循环堵塞，记得修改
         with open(input_path,'w') as f:
             f.write(data.input.replace('\r', ''))
         with open(output_path,'w') as f:
@@ -182,6 +184,8 @@ async def insert_problem(new_problem:ProblemMG):
     2. 测试的数据，解包，写本地文件
     """
     try:
+        #TODO: 测试样例的写入，应使用分布式文件服务，方便后续的judge分布式
+
         logger.info(f'PROBLEM PATH IS {config.PROBLEM_DATA_PATH}')
         new_problem.hash_id = get_hash_id(new_problem.problemtitle)
         logger.info(f'created hash_id {new_problem.hash_id}')
@@ -343,8 +347,9 @@ async def get_user_problem_status(user_id:int):
         content=[x.problem_id for x in data]
     )
 
-async def add_problem(new_problem_data: AddRequest, role):
-    user_role =  UserRole(role)
+async def add_problem(new_problem_data: AddRequest, user_info:UserInfo):
+    user_role =  UserRole(user_info.role)
+
     if user_role != UserRole.SUPERMAN:
         return ExecuteResponse(
             state=ExecuteState.FAILED.value,
@@ -362,7 +367,8 @@ async def add_problem(new_problem_data: AddRequest, role):
         example= new_problem_data.example,
         data= new_problem_data.data,
         hash_id= "",
-        created_at= datetime.datetime.now()
+        created_at= datetime.datetime.now(),
+        source= user_info.user_name
     )
 
     return await insert_problem(new_problem)
@@ -423,3 +429,43 @@ async def submit_problem(problem_id:int, user_id:int, code:str, language:str):
         logger.error(f'Unexpected error: {e}')
         raise e
     
+async def get_problem_title(request:ProblemTitleRequest, user_role):
+    try:
+        oj = ProblemOJ(request.oj_from)
+    except Exception as e:
+        raise e
+    
+    # 之后的条件搜索 需要 通过 id 映射到 problem 信息
+    filter_query = {'hash_id':1, 'problemtitle':1,'source':1, 'created_at':1}
+    select_query = {}
+    if oj == ProblemOJ.WAOJ:
+        select_query['$or'] = [
+            { 'oj_from': { '$exists': False } },
+            { 'oj_from': 'waoj' }
+        ]
+    else:
+        select_query['oj_from'] = oj.value
+    logger.info(select_query)
+    
+    if request.reverse:
+        sort_query = {'_id':-1}
+    else:
+        sort_query = {'_id':1}
+
+    result = await mongodb_manger.select_doc(MongoTable.PROBLEM.value,
+                                             select_query,
+                                             filter_query,
+                                             sort_query,
+                                             request.page_size,
+                                             (request.page_index - 1) * request.page_size)
+    
+    if oj == ProblemOJ.CODEFORCES:
+        info_list = await problem_rep.get_problem_info_cf([x['_id'] for x in result])
+        for index in range(len(info_list)):
+            result[index]["contest_id"] = info_list[index].contest_id
+            result[index]["contest_index"] = info_list[index].contest_index
+    
+    elif oj == ProblemOJ.WAOJ:
+        pass
+
+    return select_response(result)

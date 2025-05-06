@@ -46,8 +46,8 @@ def setup_exception_handlers(app: FastAPI):
         )
 
     @app.exception_handler(RequestValidationError)
-    async def validation_exception_handler(request, exc: RequestValidationError):
-        logger.warning(f"RequestValidationError: 422 {exc.errors()}")
+    async def validation_exception_handler(request:Request, exc: RequestValidationError):
+        logger.warning(f"RequestValidationError: 422 {exc.errors()} {request.headers}")
         return JSONResponse(
             status_code=422,
             content=MCResponse(

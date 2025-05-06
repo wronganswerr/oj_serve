@@ -11,3 +11,8 @@ cryptography
 alembic
 selenium
 beautifulsoup4
+dramatiq
+uvloop
+httpx
+redis
+pika

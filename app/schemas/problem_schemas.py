@@ -44,3 +44,10 @@ class JudgeMessage(BaseModel):
     search_id: str
     online_oj_choose: str
     language: str
+
+class ProblemTitleRequest(BaseModel):
+    oj_from: str
+    page_size: int
+    page_index: int
+    reverse: bool
+    titel_search: str

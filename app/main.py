@@ -1,5 +1,5 @@
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from .routers import api_router
 from app.common.database import database
 from app.common.mongodb import mongodb_manger
@@ -11,7 +11,9 @@ from app.exceptions import setup_exception_handlers
 import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from app.asyncio_middleware import AsyncIOWithUvLoop
+from app.common.core.logger import get_logger
 
+logger = get_logger(__name__)
 broker = RabbitmqBroker(
     url=config.RABBITMQ_URL,
     middleware=[AsyncIOWithUvLoop()],
@@ -57,6 +59,18 @@ app.add_middleware(
 
 # 增加自定义错误处理
 setup_exception_handlers(app)
+
+# 增加自定义中间键
+@app.middleware("http")
+async def log_request_headers(request: Request, call_next):
+    headers = dict(request.headers)
+    # print("📥 接收到请求 Headers：")
+    # for k, v in headers.items():
+        # print(f"{k}: {v}")
+    logger.debug(f"{request.headers=}")
+
+    response = await call_next(request)
+    return response
 
 app.include_router(api_router)
 # 启动命令：uvicorn main:app --reload --port 8125
