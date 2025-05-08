@@ -31,8 +31,10 @@ class ConnectionManager:
 
     def disconnect(self, ws: WebSocket, user_id: int):
         # 关闭时 移除ws对象
-        self.active_connections[user_id].remove(ws)
-
+        if user_id in self.active_connections:
+            if ws in self.active_connections[user_id]:
+                self.active_connections[user_id].remove(ws)
+        
     async def send_personal_message(self, user_id, message: WebsocketMessage):
         # 发送个人消息
         if user_id in self.active_connections:
@@ -40,6 +42,7 @@ class ConnectionManager:
                 await ws.send_json(message.model_dump())
         else:
             logger.error(f'{user_id} ws connect unfind')
+            
     async def broadcast(self, message: dict):
         # 广播消息
         for user_id, connection_list in self.active_connections.items():

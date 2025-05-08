@@ -12,7 +12,7 @@ logger = get_logger(__name__)
 
 
 
-async def get_user_info(user_id:int, phone_number: str= None):
+async def get_user_info(user_id:int, phone_number: str= None)->User:
     try:
         if phone_number is None:
             query = select(User).where(

@@ -253,7 +253,7 @@ async def get_user_submition_code(hash_id:str):
             )
         
         code = "unfind"
-        file_path = os.path.join('/root/Judger', object_status.code_url[2:])
+        file_path = os.path.join('/root/oj_judger', object_status.code_url)
 
         with open(file_path, 'r') as f:
             code = f.read()

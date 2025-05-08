@@ -186,11 +186,14 @@ async def insert_problem(new_problem:ProblemMG):
     try:
         #TODO: 测试样例的写入，应使用分布式文件服务，方便后续的judge分布式
 
-        logger.info(f'PROBLEM PATH IS {config.PROBLEM_DATA_PATH}')
+        logger.info(f'PROBLEM PATH IS {config.PROBLEM_DATA_PATH=}')
+        if not os.path.exists(config.PROBLEM_DATA_PATH):
+            os.makedirs(config.PROBLEM_DATA_PATH, exist_ok=True)
+            
         new_problem.hash_id = get_hash_id(new_problem.problemtitle)
         logger.info(f'created hash_id {new_problem.hash_id}')
         tasks_list = []
-        logger.info(f"problem data: {new_problem.data}")
+        logger.info(f"problem data: {str(new_problem.data)[:50]}")
 
         problem_data_path = config.PROBLEM_DATA_PATH + '/' +  new_problem.hash_id
         if not os.path.exists(problem_data_path):
@@ -274,7 +277,8 @@ async def update_problem(new_problem:AddRequest, user_role:int)->ExecuteResponse
             data= new_problem.data,
             hash_id= old_problem.hash_id,
             
-            created_at= datetime.datetime.now()
+            created_at= datetime.datetime.now(),
+            source= old_problem.source
         )
         
         for doc in docs:
@@ -314,7 +318,8 @@ async def update_problem(new_problem:AddRequest, user_role:int)->ExecuteResponse
             example= new_problem.example,
             data= old_problem.data,
             hash_id= old_problem.hash_id,
-            created_at= datetime.datetime.now()
+            created_at= datetime.datetime.now(),
+            source= old_problem.source
         )
 
     res = await mongodb_manger.update_doc(MongoTable.PROBLEM.value,select_query, new_problem.model_dump())

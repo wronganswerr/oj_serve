@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI, Request
-from .routers import api_router
+from app.routers import api_router
 from app.common.database import database
 from app.common.mongodb import mongodb_manger
 
@@ -14,12 +14,7 @@ from app.asyncio_middleware import AsyncIOWithUvLoop
 from app.common.core.logger import get_logger
 
 logger = get_logger(__name__)
-broker = RabbitmqBroker(
-    url=config.RABBITMQ_URL,
-    middleware=[AsyncIOWithUvLoop()],
-    confirm_delivery=True,
-)
-dramatiq.set_broker(broker)
+
 
 
 
